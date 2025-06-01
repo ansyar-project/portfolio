@@ -30,6 +30,7 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
       await updateProfileAction(form);
       setSuccess("Profile updated!");
     } catch (err) {
+      console.error("Error updating profile:", err);
       setError("Failed to update profile.");
     } finally {
       setLoading(false);

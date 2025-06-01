@@ -1,11 +1,11 @@
 import React from "react";
+import Image from "next/image";
 import {
   getProfileAction,
   getSkillsAction,
   getProjectsAction,
   getPortfolioItemsAction,
 } from "@/lib/actions";
-import ProfileCard from "@/components/ProfileCard";
 import SkillsCard from "@/components/SkillsCard";
 import ProjectsCard from "@/components/ProjectsCard";
 import PortofolioCard from "@/components/PortofolioCard";
@@ -33,14 +33,16 @@ export default async function Home() {
       : null;
     skills = await getSkillsAction();
     const rawProjects = await getProjectsAction();
-    projects = rawProjects.map((project: any) => ({
+    projects = rawProjects.map((project) => ({
       ...project,
       github: project.github === null ? undefined : project.github,
+      live: project.live === null ? undefined : project.live,
     }));
     const rawPortfolioItems = await getPortfolioItemsAction();
-    portfolioItems = rawPortfolioItems.map((item: any) => ({
+    portfolioItems = rawPortfolioItems.map((item) => ({
       ...item,
-      image: item.image ?? undefined,
+      image: item.image === null ? undefined : item.image,
+      link: item.link === null ? undefined : item.link,
     }));
   } catch (e) {
     console.error("Error loading data:", e);
@@ -50,6 +52,11 @@ export default async function Home() {
   return (
     <>
       <Navbar />
+      {error && (
+        <div className="bg-red-100 text-red-800 px-4 py-3 rounded mb-6 text-center">
+          {error}
+        </div>
+      )}
       <main className="max-w-4xl mx-auto px-2 sm:px-4 py-8 sm:py-12 space-y-16 sm:space-y-24">
         {/* Improved Hero Section */}
         <section className="relative overflow-hidden py-12 sm:py-20 mb-12 rounded-2xl shadow-lg bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 dark:from-gray-900 dark:via-blue-950 dark:to-gray-800">
@@ -80,10 +87,13 @@ export default async function Home() {
           </div>
           <div className="relative z-10 flex flex-col items-center px-4">
             {profile?.image && (
-              <img
+              <Image
                 src={profile.image}
                 alt={profile.name}
+                width={128}
+                height={128}
                 className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-800 shadow-xl object-cover mb-6"
+                priority
               />
             )}
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-2 text-center leading-tight">

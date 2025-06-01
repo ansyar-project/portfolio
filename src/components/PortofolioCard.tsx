@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 type PortfolioItem = {
   id: string;
@@ -23,10 +24,14 @@ export default function PortofolioCard({ items }: { items: PortfolioItem[] }) {
             className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow p-3 sm:p-4 flex flex-col gap-2 hover:shadow-lg transition"
           >
             {item.image && (
-              <img
+              <Image
                 src={item.image}
                 alt={item.title}
+                width={400}
+                height={160}
                 className="rounded mb-2 object-cover h-32 sm:h-40 w-full"
+                style={{ objectFit: "cover" }}
+                priority={true}
               />
             )}
             <div className="font-bold text-blue-700 dark:text-blue-300 text-base sm:text-lg">
