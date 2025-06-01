@@ -11,14 +11,19 @@ RUN pnpm install --frozen-lockfile
 FROM node:22-alpine AS builder
 WORKDIR /app
 
+ARG DATABASE_URL ADMIN_USERNAME ADMIN_PASSWORD NEXTAUTH_URL NEXTAUTH_SECRET
+ENV DATABASE_URL=${DATABASE_URL} \
+    ADMIN_USERNAME=${ADMIN_USERNAME} \
+    ADMIN_PASSWORD=${ADMIN_PASSWORD} \
+    NEXTAUTH_URL=${NEXTAUTH_URL} \
+    NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-ENV DATABASE_URL="file:/app/sqlite/prod.db"
-ENV NODE_ENV=production
 
-RUN npx prisma generate && npx prisma migrate deploy && npx prisma db seed && pnpm build
+RUN npx prisma generate && pnpm build
 
 # 3. Production image
 FROM node:22-alpine AS runner
@@ -30,7 +35,6 @@ RUN apk add --no-cache curl && corepack enable && corepack prepare pnpm@latest -
 
 # Copy Prisma schema, migrations, and SQLite DB (if present)
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/sqlite ./sqlite
 # COPY --from=builder /app/.env ./
 
 COPY --from=builder /app/public ./public
