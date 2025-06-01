@@ -1,0 +1,196 @@
+
+System Design Document: Single-Page Portfolio Website (Next.js SSR + CSR) with SQLite and Admin Dashboard CMS
+============================================================================
+
+1. Overview
+-----------
+This is a single-page dynamic portfolio website built with Next.js (App Router).
+It combines Server-Side Rendering for fast initial load and SEO, with Client-Side Rendering for interactivity such as smooth scrolling, modals, and tab filters.
+The site uses SQLite as the database and includes an Admin Dashboard as a CMS for content management.
+
+2. Objectives
+-------------
+- Render all sections (profile, skills, projects, portfolio) on a single route (`/`)
+- Use SSR to fetch and render data from SQLite database via Prisma
+- Use CSR for interactivity (scroll, tabs, image previews, filters, etc.)
+- Use server action instead of API
+- Responsive design and accessible UI
+- Admin dashboard CMS for easy content management without redeployment
+- Easy to maintain and extend
+
+3. Tech Stack
+-------------
+- Framework: Next.js (App Router)
+- Styling: Tailwind CSS
+- ORM: Prisma
+- DB: SQLite
+- Rendering: SSR + CSR
+- Hosting: Self-managed VPS
+
+4. Route Structure
+------------------
+Only one main route:
+- `/`: Home page with multiple scrollable sections:
+    - Hero/Profile
+    - Skills
+    - Project Experiences
+    - Portfolio
+    - Contact (optional)
+- `/admin`: Admin dashboard (protected route) to manage data
+
+5. Folder Structure
+--------------------
+/portfolio-site
+  /src
+    /app                 ← SSR entry page rendering all sections and admin dashboard
+    /components          ← React components (Hero, Skills, Projects, Admin UI, etc.)
+    /lib                 ← Server functions to fetch and update data in DB
+  /prisma
+    schema.prisma
+  /public
+    /images
+  tailwind.config.ts
+  next.config.js
+  tsconfig.json
+  package.json
+
+6. Database Schema (via Prisma)
+-------------------------------
+model Profile {
+  id        String  @id @default(cuid())
+  name      String
+  title     String
+  bio       String
+  location  String
+  email     String
+  github    String
+  linkedin  String
+}
+
+model Skill {
+  id     String @id @default(cuid())
+  name   String
+  level  String
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  stack       String[]
+  github      String
+  live        String
+}
+
+model PortfolioItem {
+  id          String @id @default(cuid())
+  title       String
+  description String
+  image       String
+  link        String
+}
+
+7. Rendering Approach
+---------------------
+- `src/app/page.tsx`: Server component that loads all content
+- `src/app/admin/page.tsx`: Admin dashboard (client/server components)
+- `src/components/*.tsx`: Mostly client components for interactivity and admin UI
+- `src/lib/db.ts`: Contains async Prisma calls (CRUD) for both front and admin
+
+Example usage:
+// src/app/page.tsx
+import { getProfile, getProjects, getSkills, getPortfolio } from "@/src/lib/db";
+import Hero from "@/src/components/Hero";
+import Skills from "@/src/components/Skills";
+import Projects from "@/src/components/Projects";
+import Portfolio from "@/src/components/Portfolio";
+
+export default async function Home() {
+  const profile = await getProfile();
+  const skills = await getSkills();
+  const projects = await getProjects();
+  const portfolio = await getPortfolio();
+
+  return (
+    <>
+      <Hero profile={profile} />
+      <Skills skills={skills} />
+      <Projects projects={projects} />
+      <Portfolio items={portfolio} />
+    </>
+  );
+}
+
+8. Interactivity
+----------------
+Client components handle:
+- Smooth scrolling (with `scrollIntoView`)
+- Filters or tabs for projects
+- Lightbox modal for portfolio images
+- Responsive mobile navigation
+- Admin forms for creating, updating, deleting content
+
+Example:
+// src/components/Projects.tsx
+"use client";
+export default function Projects({ projects }) {
+  const [filter, setFilter] = useState("all");
+  const filtered = filter === "all" ? projects : projects.filter(p => p.stack.includes(filter));
+
+  return (
+    <div>
+      <select onChange={e => setFilter(e.target.value)}>
+        <option value="all">All</option>
+        <option value="Next.js">Next.js</option>
+      </select>
+      <ul>{filtered.map(p => <li key={p.id}>{p.title}</li>)}</ul>
+    </div>
+  );
+}
+
+9. Navigation Strategy
+----------------------
+- Sticky navbar with anchor links:
+  - Home → `#hero`
+  - Skills → `#skills`
+  - Projects → `#projects`
+  - Portfolio → `#portfolio`
+  - Contact → `#contact`
+- Admin dashboard accessible at `/admin` (authentication recommended)
+
+10. Deployment Plan on VPS
+--------------------------
+1. Set up VPS (Ubuntu or your preferred Linux distro)
+2. Install Node.js, npm/yarn, and PM2 (or another process manager)
+3. Clone your repo to the VPS
+4. Install dependencies and build Next.js app (`npm install && npm run build`)
+5. Run the app in production mode (`npm run start` or use PM2)
+6. Set up reverse proxy with Nginx for your domain and HTTPS (Let's Encrypt)
+7. SQLite database file lives on the VPS filesystem (ensure backups)
+8. Configure firewall and security best practices
+
+Example Nginx config snippet:
+```
+server {
+    listen 80;
+    server_name yourdomain.com;
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+11. Optional Enhancements
+-------------------------
+- Animate sections on scroll with Framer Motion
+- Dark mode toggle
+- Downloadable CV
+- Contact form with email sending service
+- Authentication for Admin Dashboard (JWT, NextAuth, or other)
+
+END OF DOCUMENT

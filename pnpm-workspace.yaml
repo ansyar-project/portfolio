@@ -1,0 +1,8 @@
+onlyBuiltDependencies:
+  - '@tailwindcss/oxide'
+  - sharp
+  - sqlite3
+  - unrs-resolver
+  - '@prisma/client'
+  - '@prisma/engines'
+  - prisma
