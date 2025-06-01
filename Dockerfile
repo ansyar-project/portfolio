@@ -16,6 +16,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV DATABASE_URL="file:/app/sqlite/prod.db"
+ENV NODE_ENV=production
 
 RUN npx prisma generate && npx prisma migrate deploy && npx prisma db seed && pnpm build
 
