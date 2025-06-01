@@ -17,7 +17,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV DATABASE_URL="file:/app/sqlite/prod.db"
 
-RUN npx prisma generate && npx prisma migrate deploy && pnpm build
+RUN npx prisma generate && npx prisma migrate deploy && npx prisma db seed && pnpm build
 
 # 3. Production image
 FROM node:22-alpine AS runner
