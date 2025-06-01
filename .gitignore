@@ -65,5 +65,3 @@ Desktop.ini
 
 # Optional: Ignore local data/uploads if any
 /public/uploads
-
-/prisma/seeds.ts
