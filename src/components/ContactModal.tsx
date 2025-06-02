@@ -15,7 +15,7 @@ export default function ContactModal({
   onClose,
   setShowToast,
 }: ContactModalProps) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   if (!isOpen) return null;
 
