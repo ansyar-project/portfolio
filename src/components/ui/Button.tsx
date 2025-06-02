@@ -12,7 +12,7 @@ export default function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "px-4 py-2 rounded font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2";
+    "px-4 py-2 cursor-pointer rounded font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2";
   const variants = {
     primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-400",
     secondary:
