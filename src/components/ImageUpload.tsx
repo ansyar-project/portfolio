@@ -32,10 +32,13 @@ export default function ImageUpload({
       formData.append("file", file);
 
       const result = await uploadImageAction(formData);
-
       if (result.success && result.imagePath) {
         // Delete old image if it exists
-        if (currentImage && currentImage.startsWith("/uploads/")) {
+        if (
+          currentImage &&
+          (currentImage.startsWith("/uploads/") ||
+            currentImage.startsWith("/api/uploads/"))
+        ) {
           await deleteImageAction(currentImage);
         }
         onImageChangeAction(result.imagePath);
@@ -77,9 +80,12 @@ export default function ImageUpload({
     e.preventDefault();
     setDragOver(false);
   };
-
   const handleRemoveImage = async () => {
-    if (currentImage && currentImage.startsWith("/uploads/")) {
+    if (
+      currentImage &&
+      (currentImage.startsWith("/uploads/") ||
+        currentImage.startsWith("/api/uploads/"))
+    ) {
       await deleteImageAction(currentImage);
     }
     onImageChangeAction(null);

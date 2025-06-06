@@ -28,7 +28,6 @@ export async function uploadImageAction(
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-
     // Ensure uploads directory exists
     const uploadsDir = join(process.cwd(), "public", "uploads");
     await mkdir(uploadsDir, { recursive: true });
@@ -50,8 +49,8 @@ export async function uploadImageAction(
     const filePath = join(uploadsDir, optimizedFileName);
     await writeFile(filePath, optimizedBuffer);
 
-    // Return the public URL path
-    const imagePath = `/uploads/${optimizedFileName}`;
+    // Return the API route URL path
+    const imagePath = `/api/uploads/${optimizedFileName}`;
 
     return { success: true, imagePath };
   } catch (error) {
@@ -67,12 +66,25 @@ export async function deleteImageAction(
   imagePath: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!imagePath || !imagePath.startsWith("/uploads/")) {
+    if (
+      !imagePath ||
+      (!imagePath.startsWith("/uploads/") &&
+        !imagePath.startsWith("/api/uploads/"))
+    ) {
       return { success: false, error: "Invalid image path" };
     }
 
     const { unlink } = await import("fs/promises");
-    const fullPath = join(process.cwd(), "public", imagePath);
+
+    // Extract filename from either /uploads/filename or /api/uploads/filename
+    let filename: string;
+    if (imagePath.startsWith("/api/uploads/")) {
+      filename = imagePath.replace("/api/uploads/", "");
+    } else {
+      filename = imagePath.replace("/uploads/", "");
+    }
+
+    const fullPath = join(process.cwd(), "public", "uploads", filename);
 
     try {
       await unlink(fullPath);
