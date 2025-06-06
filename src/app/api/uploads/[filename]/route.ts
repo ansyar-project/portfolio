@@ -5,16 +5,17 @@ import { existsSync } from "fs";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { filename: string } }
+  { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    const filePath = join(process.cwd(), "public", "uploads", params.filename);
+    const { filename } = await params;
+    const filePath = join(process.cwd(), "public", "uploads", filename);
 
     if (!existsSync(filePath)) {
       return new NextResponse("File not found", { status: 404 });
     }
     const fileBuffer = await readFile(filePath);
-    const ext = params.filename.split(".").pop()?.toLowerCase();
+    const ext = filename.split(".").pop()?.toLowerCase();
 
     let contentType = "application/octet-stream";
     switch (ext) {
