@@ -40,9 +40,8 @@ describe("ProfileForm", () => {
     expect(
       screen.getByDisplayValue("Full Stack Developer")
     ).toBeInTheDocument();
-    expect(
-      screen.getByDisplayValue(/Passionate developer/)
-    ).toBeInTheDocument();
+    const bioTextarea = screen.getByLabelText("Bio") as HTMLTextAreaElement;
+    expect(bioTextarea.value).toMatch(/Passionate full-stack developer/);
     expect(screen.getByDisplayValue("johndoe")).toBeInTheDocument();
     expect(screen.getByDisplayValue("john-doe")).toBeInTheDocument();
   });

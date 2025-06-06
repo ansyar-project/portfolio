@@ -2,14 +2,11 @@ import type { Profile, Skill, Project, PortfolioItem } from "@/lib/types";
 
 // Mock Profile Data
 export const mockProfile: Profile = {
-  id: "1",
   name: "John Doe",
   title: "Full Stack Developer",
   bio: "Passionate full-stack developer with expertise in modern web technologies. I love creating scalable applications and solving complex problems.",
   github: "https://github.com/johndoe",
-  linkedin: "https://linkedin.com/in/johndoe",
-  createdAt: new Date("2024-01-01T00:00:00.000Z"),
-  updatedAt: new Date("2024-01-01T00:00:00.000Z"),
+  linkedin: "https://linkedin.com/in/johndoe"
 };
 
 // Mock Skills Data
@@ -18,43 +15,31 @@ export const mockSkills: Skill[] = [
     id: "1",
     name: "JavaScript",
     level: "Advanced",
-    createdAt: new Date("2024-01-01T00:00:00.000Z"),
-    updatedAt: new Date("2024-01-01T00:00:00.000Z"),
   },
   {
     id: "2",
     name: "TypeScript",
     level: "Advanced",
-    createdAt: new Date("2024-01-01T00:00:00.000Z"),
-    updatedAt: new Date("2024-01-01T00:00:00.000Z"),
   },
   {
     id: "3",
     name: "React",
     level: "Expert",
-    createdAt: new Date("2024-01-01T00:00:00.000Z"),
-    updatedAt: new Date("2024-01-01T00:00:00.000Z"),
   },
   {
     id: "4",
     name: "Next.js",
     level: "Advanced",
-    createdAt: new Date("2024-01-01T00:00:00.000Z"),
-    updatedAt: new Date("2024-01-01T00:00:00.000Z"),
   },
   {
     id: "5",
     name: "Node.js",
     level: "Advanced",
-    createdAt: new Date("2024-01-01T00:00:00.000Z"),
-    updatedAt: new Date("2024-01-01T00:00:00.000Z"),
   },
   {
     id: "6",
     name: "PostgreSQL",
     level: "Intermediate",
-    createdAt: new Date("2024-01-01T00:00:00.000Z"),
-    updatedAt: new Date("2024-01-01T00:00:00.000Z"),
   },
 ];
 
@@ -74,28 +59,24 @@ export const mockProjects: Project[] = [
       {
         id: "1",
         name: "Next.js",
-        projectId: "1",
         createdAt: new Date("2024-01-01T00:00:00.000Z"),
         updatedAt: new Date("2024-01-01T00:00:00.000Z"),
       },
       {
         id: "2",
         name: "TypeScript",
-        projectId: "1",
         createdAt: new Date("2024-01-01T00:00:00.000Z"),
         updatedAt: new Date("2024-01-01T00:00:00.000Z"),
       },
       {
         id: "3",
         name: "Prisma",
-        projectId: "1",
         createdAt: new Date("2024-01-01T00:00:00.000Z"),
         updatedAt: new Date("2024-01-01T00:00:00.000Z"),
       },
       {
         id: "4",
         name: "SQLite",
-        projectId: "1",
         createdAt: new Date("2024-01-01T00:00:00.000Z"),
         updatedAt: new Date("2024-01-01T00:00:00.000Z"),
       },
@@ -197,12 +178,11 @@ export const mockPortfolioItems: PortfolioItem[] = [
   {
     id: "1",
     title: "Mobile App Design",
-    description:
-      "UI/UX design for a fitness tracking mobile application with clean interface and intuitive navigation.",
+    description: "A mobile app UI/UX design for a fintech startup.",
     image: "/portfolio/mobile-app-design.jpg",
     link: "https://behance.net/johndoe/mobile-app",
-    createdAt: new Date("2024-01-15T00:00:00.000Z"),
-    updatedAt: new Date("2024-01-15T00:00:00.000Z"),
+    createdAt: new Date("2024-03-01T00:00:00.000Z"),
+    updatedAt: new Date("2024-03-01T00:00:00.000Z"),
   },
   {
     id: "2",
@@ -211,8 +191,8 @@ export const mockPortfolioItems: PortfolioItem[] = [
       "Complete brand identity design including logo, color palette, typography, and brand guidelines for a tech startup.",
     image: "/portfolio/brand-identity.jpg",
     link: "https://behance.net/johndoe/brand-identity",
-    createdAt: new Date("2024-02-15T00:00:00.000Z"),
-    updatedAt: new Date("2024-02-15T00:00:00.000Z"),
+    createdAt: new Date("2024-03-15T00:00:00.000Z"),
+    updatedAt: new Date("2024-03-15T00:00:00.000Z"),
   },
   {
     id: "3",
@@ -221,8 +201,28 @@ export const mockPortfolioItems: PortfolioItem[] = [
       "Complete redesign of a SaaS platform focusing on user experience improvement and modern design principles.",
     image: "/portfolio/web-redesign.jpg",
     link: "https://behance.net/johndoe/web-redesign",
-    createdAt: new Date("2024-03-15T00:00:00.000Z"),
-    updatedAt: new Date("2024-03-15T00:00:00.000Z"),
+    createdAt: new Date("2024-03-20T00:00:00.000Z"),
+    updatedAt: new Date("2024-03-20T00:00:00.000Z"),
+  },
+  {
+    id: "4",
+    title: "E-commerce Platform",
+    description:
+      "Full-stack e-commerce solution with payment integration, inventory management, and real-time order tracking.",
+    image: "/uploads/ecommerce.jpg",
+    link: "https://shop-demo.com",
+    createdAt: new Date("2024-04-01T00:00:00.000Z"),
+    updatedAt: new Date("2024-04-01T00:00:00.000Z"),
+  },
+  {
+    id: "5",
+    title: "Task Management App",
+    description:
+      "Collaborative task management application with real-time updates, file sharing, and team communication features.",
+    image: "/uploads/taskmanager.jpg",
+    link: "https://taskmanager-demo.com",
+    createdAt: new Date("2024-05-01T00:00:00.000Z"),
+    updatedAt: new Date("2024-05-01T00:00:00.000Z"),
   },
 ];
 

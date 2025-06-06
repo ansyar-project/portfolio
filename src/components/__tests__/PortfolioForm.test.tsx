@@ -4,9 +4,11 @@
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import "@testing-library/jest-dom";
 import PortfolioForm from "../PortfolioForm";
 import * as actions from "@/lib/actions";
 import { mockPortfolioItems } from "@/lib/__tests__/fixtures";
+import type { PortfolioItem } from "@/lib/types";
 
 // Mock the server actions
 jest.mock("@/lib/actions", () => ({
@@ -71,17 +73,23 @@ describe("PortfolioForm", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Add" })).toBeInTheDocument();
   });
-
   it("displays existing portfolio items", () => {
     render(<PortfolioForm items={mockItems} />);
 
-    expect(screen.getByText("E-commerce Platform")).toBeInTheDocument();
-    expect(screen.getByText("Task Management App")).toBeInTheDocument();
-    expect(screen.getByText("Personal Blog")).toBeInTheDocument();
+    expect(screen.getByText("Mobile App Design")).toBeInTheDocument();
+    expect(screen.getByText("Brand Identity Package")).toBeInTheDocument();
+    expect(screen.getByText("Web Application Redesign")).toBeInTheDocument();
   });
-
   it("adds a new portfolio item successfully", async () => {
-    mockedActions.addPortfolioItemAction.mockResolvedValueOnce();
+    mockedActions.addPortfolioItemAction.mockResolvedValueOnce({
+      id: "new-id",
+      title: "New Portfolio Item",
+      description: "A brand new portfolio item",
+      image: "",
+      link: "https://example.com",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     render(<PortfolioForm items={mockItems} />);
 
@@ -133,12 +141,11 @@ describe("PortfolioForm", () => {
       expect(screen.getByText("Database error")).toBeInTheDocument();
     });
   });
-
   it("enters edit mode when edit button is clicked", async () => {
     render(<PortfolioForm items={mockItems} />);
 
     const editButton = screen.getByRole("button", {
-      name: "Edit E-commerce Platform",
+      name: "Edit Mobile App Design",
     });
     await user.click(editButton);
 
@@ -146,23 +153,30 @@ describe("PortfolioForm", () => {
     const descriptionInput = screen.getByPlaceholderText("Description");
     const linkInput = screen.getByPlaceholderText("Project/Portfolio Link");
 
-    expect(titleInput).toHaveValue("E-commerce Platform");
+    expect(titleInput).toHaveValue("Mobile App Design");
     expect(descriptionInput).toHaveValue(
-      "A full-stack e-commerce solution with payment integration"
+      "UI/UX design for a fitness tracking mobile application with clean interface and intuitive navigation."
     );
-    expect(linkInput).toHaveValue("https://ecommerce-demo.com");
+    expect(linkInput).toHaveValue("https://behance.net/johndoe/mobile-app");
     expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
-
   it("updates an existing portfolio item successfully", async () => {
-    mockedActions.updatePortfolioItemAction.mockResolvedValueOnce();
+    mockedActions.updatePortfolioItemAction.mockResolvedValueOnce({
+      id: "1",
+      title: "Updated Mobile App Design",
+      description: "Updated description",
+      image: "/portfolio/mobile-app-design.jpg",
+      link: "https://ecommerce-demo.com",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     render(<PortfolioForm items={mockItems} />);
 
     // Enter edit mode
     const editButton = screen.getByRole("button", {
-      name: "Edit E-commerce Platform",
+      name: "Edit Mobile App Design",
     });
     await user.click(editButton);
 
@@ -170,7 +184,7 @@ describe("PortfolioForm", () => {
     const descriptionInput = screen.getByPlaceholderText("Description");
 
     await user.clear(titleInput);
-    await user.type(titleInput, "Updated E-commerce Platform");
+    await user.type(titleInput, "Updated Mobile App Design");
     await user.clear(descriptionInput);
     await user.type(descriptionInput, "Updated description");
 
@@ -178,9 +192,9 @@ describe("PortfolioForm", () => {
     await user.click(updateButton);
 
     expect(mockedActions.updatePortfolioItemAction).toHaveBeenCalledWith("1", {
-      title: "Updated E-commerce Platform",
+      title: "Updated Mobile App Design",
       description: "Updated description",
-      image: "/uploads/ecommerce.jpg",
+      image: "/portfolio/mobile-app-design.jpg",
       link: "https://ecommerce-demo.com",
     });
 
@@ -237,12 +251,11 @@ describe("PortfolioForm", () => {
       ""
     );
   });
-
   it("uses two-step confirmation for delete", async () => {
     render(<PortfolioForm items={mockItems} />);
 
     const deleteButton = screen.getByRole("button", {
-      name: "Delete E-commerce Platform",
+      name: "Delete Mobile App Design",
     });
     await user.click(deleteButton);
 
@@ -254,14 +267,22 @@ describe("PortfolioForm", () => {
       screen.getByRole("button", { name: "Cancel delete" })
     ).toBeInTheDocument();
   });
-
   it("deletes a portfolio item successfully", async () => {
-    mockedActions.deletePortfolioItemAction.mockResolvedValueOnce();
+    mockedActions.deletePortfolioItemAction.mockResolvedValueOnce({
+      id: "1",
+      title: "Mobile App Design",
+      description:
+        "UI/UX design for a fitness tracking mobile application with clean interface and intuitive navigation.",
+      image: "/portfolio/mobile-app-design.jpg",
+      link: "https://behance.net/johndoe/mobile-app",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     render(<PortfolioForm items={mockItems} />);
 
     const deleteButton = screen.getByRole("button", {
-      name: "Delete E-commerce Platform",
+      name: "Delete Mobile App Design",
     });
     await user.click(deleteButton);
 
@@ -275,7 +296,7 @@ describe("PortfolioForm", () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          'Portfolio item "E-commerce Platform" deleted successfully!'
+          'Portfolio item "Mobile App Design" deleted successfully!'
         )
       ).toBeInTheDocument();
     });
@@ -283,9 +304,8 @@ describe("PortfolioForm", () => {
 
   it("cancels delete confirmation", async () => {
     render(<PortfolioForm items={mockItems} />);
-
     const deleteButton = screen.getByRole("button", {
-      name: "Delete E-commerce Platform",
+      name: "Delete Mobile App Design",
     });
     await user.click(deleteButton);
 
@@ -294,7 +314,7 @@ describe("PortfolioForm", () => {
 
     // Should revert to normal delete button
     expect(
-      screen.getByRole("button", { name: "Delete E-commerce Platform" })
+      screen.getByRole("button", { name: "Delete Mobile App Design" })
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Confirm Delete" })
@@ -336,7 +356,15 @@ describe("PortfolioForm", () => {
     await user.type(titleInput, "Test Item");
     await user.type(descriptionInput, "Test Description");
 
-    mockedActions.addPortfolioItemAction.mockResolvedValueOnce();
+    mockedActions.addPortfolioItemAction.mockResolvedValueOnce({
+      id: "test-id",
+      title: "Test Item",
+      description: "Test Description",
+      image: "/uploads/test-image.jpg",
+      link: "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     const addButton = screen.getByRole("button", { name: "Add" });
     await user.click(addButton);
@@ -367,7 +395,15 @@ describe("PortfolioForm", () => {
     await user.type(titleInput, "Test Item");
     await user.type(descriptionInput, "Test Description");
 
-    mockedActions.addPortfolioItemAction.mockResolvedValueOnce();
+    mockedActions.addPortfolioItemAction.mockResolvedValueOnce({
+      id: "test-id",
+      title: "Test Item",
+      description: "Test Description",
+      image: "",
+      link: "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     const addButton = screen.getByRole("button", { name: "Add" });
     await user.click(addButton);
@@ -421,7 +457,15 @@ describe("PortfolioForm", () => {
   });
 
   it("auto-clears success and error messages after 3 seconds", async () => {
-    mockedActions.addPortfolioItemAction.mockResolvedValueOnce();
+    mockedActions.addPortfolioItemAction.mockResolvedValueOnce({
+      id: "test-id",
+      title: "Test Item",
+      description: "Test Description",
+      image: "",
+      link: "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     render(<PortfolioForm items={mockItems} />);
 
@@ -459,13 +503,14 @@ describe("PortfolioForm", () => {
   });
 
   it("handles items without optional fields gracefully", () => {
-    const itemsWithoutOptionalFields = [
+    // Use undefined instead of null for optional fields to match PortfolioItem type
+    const itemsWithoutOptionalFields: PortfolioItem[] = [
       {
         id: "1",
         title: "Minimal Item",
         description: "Basic description",
-        image: null,
-        link: null,
+        image: undefined,
+        link: undefined,
       },
     ];
 
