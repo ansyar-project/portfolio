@@ -96,14 +96,6 @@ async function main() {
   await prisma.portfolioItem.createMany({
     data: [
       {
-        title: "CMS for Portfolio",
-        description:
-          "A content management system for managing portfolio items.",
-        image: "/images/cms.png",
-        link: "https://ansyar-world.top/admin",
-        createdAt: new Date(),
-      },
-      {
         title: "Not an Apple Landing Page",
         description: "A landing page inspired by Apple's design.",
         image: "/images/not-an-apple.png",
