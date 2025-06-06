@@ -71,10 +71,11 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 
 # Copy standalone build (much smaller)
-COPY --from=builder --chown=nonroot:nonroot /app/.next/standalone ./
-COPY --from=builder --chown=nonroot:nonroot /app/.next/static ./.next/static
-COPY --from=builder --chown=nonroot:nonroot /app/public ./public
-COPY --from=builder --chown=nonroot:nonroot /app/healthcheck.js ./
+COPY --from=builder --chown=node:node /app/.next/standalone ./
+COPY --from=builder --chown=node:node /app/.next/static ./.next/static
+COPY --from=builder --chown=node:node /app/public ./public
+COPY --from=builder --chown=node:node /app/healthcheck.js ./
+
 
 USER nonroot
 EXPOSE 3000
