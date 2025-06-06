@@ -85,7 +85,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 
 # Copy Prisma files for runtime
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+COPY  --chown=nextjs:nodejs ./prisma ./prisma
 
 # Install only production dependencies
 COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules

@@ -114,15 +114,15 @@ export default async function Home() {
     const rawProjects = await getProjectsAction();
     projects = rawProjects.map((project) => ({
       ...project,
-      image: project.image === null ? undefined : project.image,
-      github: project.github === null ? undefined : project.github,
-      live: project.live === null ? undefined : project.live,
+      image: project.image === null ? '' : project.image,
+      github: project.github === null ? '' : project.github,
+      live: project.live === null ? '' : project.live,
     }));
     const rawPortfolioItems = await getPortfolioItemsAction();
     portfolioItems = rawPortfolioItems.map((item) => ({
       ...item,
-      image: item.image === null ? undefined : item.image,
-      link: item.link === null ? undefined : item.link,
+      image: item.image === null || item.image === undefined ? '' : item.image,
+      link: item.link === null || item.link === undefined ? '' : item.link,
     }));
   } catch (e) {
     console.error("Error loading data:", e);
