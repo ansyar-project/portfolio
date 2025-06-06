@@ -53,7 +53,7 @@ ENV DATABASE_URL=${DATABASE_URL} \
     NEXT_TELEMETRY_DISABLED=1
 
 # Generate Prisma client and build the app
-RUN npx prisma generate && pnpm build
+RUN pnpm build
 
 # 3. Production image
 FROM node:22-alpine AS runner
@@ -97,7 +97,7 @@ USER nextjs
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
 
 # Use dumb-init for better signal handling
