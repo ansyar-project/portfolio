@@ -23,8 +23,8 @@ docker-compose*.yaml
 
 # Package manager lock files (keep these for reproducible builds)
 # Uncomment the ones you're NOT using:
-package-lock.json
-yarn.lock
+# package-lock.json
+# yarn.lock
 # pnpm-lock.yaml
 
 # Testing
