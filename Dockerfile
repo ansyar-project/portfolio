@@ -52,6 +52,14 @@ ENV DATABASE_URL=${DATABASE_URL} \
     NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
 
+# Create health check script
+RUN echo 'const http = require("http"); \
+const req = http.get("http://localhost:3000/api/health", (res) => { \
+  process.exit(res.statusCode === 200 ? 0 : 1); \
+}); \
+req.on("error", () => process.exit(1)); \
+req.setTimeout(5000, () => { req.destroy(); process.exit(1); });' > healthcheck.js
+
 # Generate Prisma client and build the app
 RUN pnpm build
 
@@ -66,12 +74,13 @@ WORKDIR /app
 COPY --from=builder --chown=nonroot:nonroot /app/.next/standalone ./
 COPY --from=builder --chown=nonroot:nonroot /app/.next/static ./.next/static
 COPY --from=builder --chown=nonroot:nonroot /app/public ./public
+COPY --from=builder --chown=nonroot:nonroot /app/healthcheck.js ./
 
 USER nonroot
 EXPOSE 3000
 
-# Fix health check for distroless - use node directly without shell
+# Simplified health check using the script
 HEALTHCHECK --interval=5s --timeout=10s --start-period=5s --retries=5 \
-  CMD ["node", "-e", "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+  CMD ["/nodejs/bin/node", "healthcheck.js"]
 
 CMD ["server.js"]
