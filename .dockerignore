@@ -117,7 +117,7 @@ temp/
 .tmp/
 
 # Optional: Ignore local uploads/data
-/public/uploads
+/public/uploads/*
 /uploads/
 /data/
 
