@@ -156,11 +156,6 @@ export default async function Home() {
       link: "#portfolio",
       icon: <Briefcase className="h-4 w-4" />,
     },
-    {
-      name: "Contact",
-      link: "#contact",
-      icon: <Mail className="h-4 w-4" />,
-    },
   ];
 
   // Enhanced typewriter words
