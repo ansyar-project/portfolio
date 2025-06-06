@@ -23,6 +23,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./authOptions";
 import { sanitizeInput, sanitizeHtml, sanitizeUrl } from "./utils";
 import { logAdminAction } from "./auditLogDb";
+import { deleteImageAction } from "./uploadActions";
 
 // --- Profile Actions ---
 export async function getProfileAction() {
@@ -362,7 +363,23 @@ export async function deleteProjectAction(id: string) {
     if (!id?.trim()) {
       throw new Error("Project ID is required");
     }
+
+    // First, get the project data to retrieve the image path
+    const projects = await getProjects();
+    const project = projects.find((p) => p.id === id);
+
+    // Delete the project from database
     const result = await deleteProject(id);
+
+    // If the project had an image, delete it from the filesystem
+    if (project?.image && project.image.startsWith("/uploads/")) {
+      try {
+        await deleteImageAction(project.image);
+      } catch (error) {
+        console.warn("Failed to delete project image:", error);
+        // Don't throw error here as the project is already deleted
+      }
+    }
 
     // Log the action
     await logAdminAction("DELETE", "project", id);
@@ -501,7 +518,23 @@ export async function deletePortfolioItemAction(id: string) {
     if (!id?.trim()) {
       throw new Error("Portfolio item ID is required");
     }
+
+    // First, get the portfolio item data to retrieve the image path
+    const portfolioItems = await getPortfolioItems();
+    const portfolioItem = portfolioItems.find((item) => item.id === id);
+
+    // Delete the portfolio item from database
     const result = await deletePortfolioItem(id);
+
+    // If the portfolio item had an image, delete it from the filesystem
+    if (portfolioItem?.image && portfolioItem.image.startsWith("/uploads/")) {
+      try {
+        await deleteImageAction(portfolioItem.image);
+      } catch (error) {
+        console.warn("Failed to delete portfolio item image:", error);
+        // Don't throw error here as the portfolio item is already deleted
+      }
+    }
 
     // Log the action
     await logAdminAction("DELETE", "portfolio_item", id);

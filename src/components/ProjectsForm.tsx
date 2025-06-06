@@ -6,6 +6,7 @@ import {
   updateProjectAction,
   deleteProjectAction,
 } from "@/lib/actions";
+import ImageUpload from "./ImageUpload";
 
 interface ProjectFormProps {
   projects: Project[];
@@ -75,6 +76,10 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
     setError(null);
     setSuccess(null);
     setDeleteConfirm(null);
+  };
+
+  const handleImageChange = (imagePath: string | null) => {
+    setForm({ ...form, image: imagePath || "" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,14 +181,10 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
           value={form.description}
           onChange={handleChange}
           required
-        />
-        <input
-          className="border rounded px-3 py-2"
-          name="image"
-          type="url"
-          placeholder="Project image URL (optional)"
-          value={form.image}
-          onChange={handleChange}
+        />{" "}
+        <ImageUpload
+          currentImage={form.image}
+          onImageChangeAction={handleImageChange}
         />
         <input
           className="border rounded px-3 py-2"

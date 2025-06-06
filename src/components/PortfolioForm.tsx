@@ -6,6 +6,7 @@ import {
   updatePortfolioItemAction,
   deletePortfolioItemAction,
 } from "@/lib/actions";
+import ImageUpload from "./ImageUpload";
 
 interface PortfolioFormProps {
   items: PortfolioItem[];
@@ -56,6 +57,10 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
     setError(null);
     setSuccess(null);
     setDeleteConfirm(null);
+  };
+
+  const handleImageChange = (imagePath: string | null) => {
+    setForm({ ...form, image: imagePath || "" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,7 +125,7 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
           value={form.title}
           onChange={handleChange}
           required
-        />
+        />{" "}
         <textarea
           className="border rounded px-3 py-2"
           name="description"
@@ -128,14 +133,10 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
           value={form.description}
           onChange={handleChange}
           required
-        />
-        <input
-          className="border rounded px-3 py-2"
-          name="image"
-          type="text"
-          placeholder="Image URL"
-          value={form.image}
-          onChange={handleChange}
+        />{" "}
+        <ImageUpload
+          currentImage={form.image}
+          onImageChangeAction={handleImageChange}
         />
         <input
           className="border rounded px-3 py-2"

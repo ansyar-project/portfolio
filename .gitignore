@@ -100,7 +100,7 @@ tmp/
 temp/
 
 # Optional: Ignore local data/uploads if any
-/public/uploads
+/public/uploads/*
 
 # Storybook build outputs
 /storybook-static
