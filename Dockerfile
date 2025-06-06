@@ -84,5 +84,8 @@ COPY --from=builder --chown=node:node /app/healthcheck.js ./
 USER node
 EXPOSE 3000
 
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
 # Use dumb-init for better signal handling
 CMD ["dumb-init", "node", "server.js"]
