@@ -267,13 +267,12 @@ export async function addProjectAction(data: Parameters<typeof addProject>[0]) {
     }
     if (!data.description?.trim()) {
       throw new Error("Project description is required");
-    }
-
-    // Sanitize input data
+    } // Sanitize input data
     const sanitizedData = {
       ...data,
       title: sanitizeInput(data.title),
       description: sanitizeHtml(data.description),
+      image: data.image ? sanitizeUrl(data.image) : data.image,
       github: data.github ? sanitizeUrl(data.github) : data.github,
       live: data.live ? sanitizeUrl(data.live) : data.live,
     };
@@ -323,6 +322,7 @@ export async function updateProjectAction(
           description: data.description
             ? sanitizeHtml(data.description)
             : data.description,
+          image: data.image ? sanitizeUrl(data.image) : data.image,
           github: data.github ? sanitizeUrl(data.github) : data.github,
           live: data.live ? sanitizeUrl(data.live) : data.live,
           stacks: data.stacks

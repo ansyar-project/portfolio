@@ -44,6 +44,7 @@ export async function getProjects() {
 export async function addProject(data: {
   title: string;
   description: string;
+  image?: string;
   github?: string;
   live?: string;
   stacks?: { name: string }[];
@@ -62,6 +63,7 @@ export async function updateProject(
   data: Partial<{
     title: string;
     description: string;
+    image?: string;
     github?: string;
     live?: string;
     stacks?: { name: string }[];

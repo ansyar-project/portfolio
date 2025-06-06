@@ -67,6 +67,7 @@ export function transformProjects(
 ): Project[] {
   return rawProjects.map((project) => ({
     ...project,
+    image: project.image === null ? undefined : project.image,
     github: project.github === null ? undefined : project.github,
     live: project.live === null ? undefined : project.live,
   })) as Project[];

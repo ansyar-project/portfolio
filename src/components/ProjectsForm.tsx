@@ -15,12 +15,14 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
   const [form, setForm] = useState<{
     title: string;
     description: string;
+    image?: string;
     github?: string;
     live?: string;
     stacks?: { name: string }[];
   }>({
     title: "",
     description: "",
+    image: "",
     github: "",
     live: "",
     stacks: [],
@@ -53,6 +55,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
     setForm({
       title: project.title,
       description: project.description,
+      image: project.image ?? "",
       github: project.github ?? "",
       live: project.live ?? "",
       stacks: project.stacks?.map((stack) => ({ name: stack.name })) || [],
@@ -60,7 +63,14 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
   };
   const handleCancel = () => {
     setEditingId(null);
-    setForm({ title: "", description: "", github: "", live: "", stacks: [] });
+    setForm({
+      title: "",
+      description: "",
+      image: "",
+      github: "",
+      live: "",
+      stacks: [],
+    });
     setStackInput("");
     setError(null);
     setSuccess(null);
@@ -80,7 +90,14 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
         await addProjectAction(form);
         setSuccess("Project added successfully!");
       }
-      setForm({ title: "", description: "", github: "", live: "", stacks: [] });
+      setForm({
+        title: "",
+        description: "",
+        image: "",
+        github: "",
+        live: "",
+        stacks: [],
+      });
       setEditingId(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save project.");
@@ -151,7 +168,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
           value={form.title}
           onChange={handleChange}
           required
-        />
+        />{" "}
         <textarea
           className="border rounded px-3 py-2"
           name="description"
@@ -159,6 +176,14 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
           value={form.description}
           onChange={handleChange}
           required
+        />
+        <input
+          className="border rounded px-3 py-2"
+          name="image"
+          type="url"
+          placeholder="Project image URL (optional)"
+          value={form.image}
+          onChange={handleChange}
         />
         <input
           className="border rounded px-3 py-2"

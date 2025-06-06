@@ -6,6 +6,7 @@ import {
   getProjectsAction,
   getPortfolioItemsAction,
 } from "@/lib/actions";
+import ProjectImage from "@/components/ProjectImage";
 
 import Footer from "@/components/Footer";
 import ScrollProgress from "@/components/ScrollProgress";
@@ -113,6 +114,7 @@ export default async function Home() {
     const rawProjects = await getProjectsAction();
     projects = rawProjects.map((project) => ({
       ...project,
+      image: project.image === null ? undefined : project.image,
       github: project.github === null ? undefined : project.github,
       live: project.live === null ? undefined : project.live,
     }));
@@ -778,6 +780,33 @@ export default async function Home() {
                       >
                         {/* Project Preview */}
                         <div className="aspect-video bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 relative overflow-hidden">
+                          {project.image ? (
+                            <>
+                              <ProjectImage
+                                src={project.image}
+                                alt={`${project.title} preview`}
+                                width={400}
+                                height={225}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                placeholder="blur"
+                                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyLjzSlCJiWzcs4PvXWdTOkLoBv/9k="
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            </>
+                          ) : null}
+                          {/* Fallback gradient with project icon - shown when no image or image fails to load */}
+                          <div
+                            className={`absolute inset-0 ${
+                              project.image ? "hidden" : "block"
+                            }`}
+                          >
+                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-teal-500/20" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                                <Code className="w-10 h-10 text-white/60" />
+                              </div>
+                            </div>
+                          </div>
                           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                           <div className="absolute top-4 right-4 flex gap-2">
                             {project.github && (

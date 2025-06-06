@@ -44,12 +44,13 @@ async function main() {
       { name: "DevOps Practices", level: "Intermediate" },
     ],
   });
-
   // Projects
   const project1 = await prisma.project.create({
     data: {
       title: "Personal Portfolio",
       description: "A portfolio website to showcase my projects and skills.",
+      image:
+        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=225&fit=crop&crop=entropy&auto=format&q=80",
       github: "https://github.com/ansyar-project/portfolio",
       live: "https://ansyar-world.top",
       stacks: {
@@ -67,11 +68,12 @@ async function main() {
     },
     include: { stacks: true },
   });
-
   const project2 = await prisma.project.create({
     data: {
       title: "Family Expense Tracker",
       description: "A web app to track family expenses and budgets.",
+      image:
+        "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=225&fit=crop&crop=entropy&auto=format&q=80",
       github: "https://github.com/ansyar-project/family-expense-tracker",
       live: "https://family-expense-tracker.ansyar-world.top",
       stacks: {
@@ -95,7 +97,8 @@ async function main() {
     data: [
       {
         title: "CMS for Portfolio",
-        description: "A content management system for managing portfolio items.",
+        description:
+          "A content management system for managing portfolio items.",
         image: "/images/cms.png",
         link: "https://ansyar-world.top/admin",
         createdAt: new Date(),
