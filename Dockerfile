@@ -52,9 +52,6 @@ ENV DATABASE_URL=${DATABASE_URL} \
     NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
 
-# Generate Prisma client (before build)
-RUN if [ -d "prisma" ]; then pnpm prisma generate; fi
-
 # Build the app
 RUN pnpm build
 
@@ -86,10 +83,6 @@ COPY --from=builder --chown=node:node /app/healthcheck.js ./
 
 USER node
 EXPOSE 3000
-
-# More reasonable health check intervals
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=5 \
-  CMD ["node", "healthcheck.js"]
 
 # Use dumb-init for better signal handling
 CMD ["dumb-init", "node", "server.js"]
