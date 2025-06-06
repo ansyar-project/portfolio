@@ -67,7 +67,7 @@ RUN pnpm build
 RUN pnpm prune --prod
 
 # 3. Production image
-FROM gcr.io/distroless/nodejs22-debian12 AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 # Copy standalone build (much smaller)
@@ -81,6 +81,6 @@ EXPOSE 3000
 
 # Simplified health check using the script
 HEALTHCHECK --interval=5s --timeout=10s --start-period=5s --retries=5 \
-  CMD ["/nodejs/bin/node", "healthcheck.js"]
+  CMD ["node", "healthcheck.js"]
 
 CMD ["server.js"]
