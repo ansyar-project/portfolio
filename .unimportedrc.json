@@ -1,0 +1,24 @@
+{
+  "ignoreUnresolved": [],
+  "ignoreUnused": [
+    "@prisma/client",
+    "@tabler/icons-react",
+    "@types/three",
+    "class-variance-authority",
+    "clsx",
+    "framer-motion",
+    "lucide-react",
+    "next",
+    "next-auth",
+    "react",
+    "react-dom",
+    "react-icons",
+    "simplex-noise",
+    "sqlite3",
+    "tailwind-merge",
+    "three",
+    "ts-node"
+  ],
+  "ignoreUnimported": ["*page.tsx", "*layout.tsx", "*app.tsx", "*route.ts"]
+
+}
