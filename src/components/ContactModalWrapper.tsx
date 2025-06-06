@@ -1,6 +1,8 @@
 "use client";
-import React, { useState } from "react";
-import ContactModal from "./ContactModal";
+import React, { useState, lazy, Suspense } from "react";
+
+// Lazy load the ContactModal to reduce initial bundle size
+const ContactModal = lazy(() => import("./ContactModal"));
 
 export default function ContactModalWrapper() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -38,19 +40,16 @@ export default function ContactModalWrapper() {
       >
         {/* Animated gradient background */}
         <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/30 via-teal-600/30 to-emerald-600/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-gradient-shift"></div>
-
         {/* Floating particles effect */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="absolute top-1/4 left-1/4 w-1 h-1 bg-white/60 rounded-full animate-float"></div>
           <div className="absolute top-3/4 right-1/3 w-0.5 h-0.5 bg-emerald-300/60 rounded-full animate-float-delayed"></div>
           <div className="absolute top-1/2 right-1/4 w-0.5 h-0.5 bg-teal-300/60 rounded-full animate-particle-float"></div>
         </div>
-
         {/* Shimmer effect */}
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
         </div>
-
         <span className="relative z-10 flex items-center gap-3">
           <svg
             width="20"
@@ -70,16 +69,26 @@ export default function ContactModalWrapper() {
           <span className="group-hover:text-emerald-100 transition-colors duration-300">
             Let&apos;s Talk
           </span>
-        </span>
-
+        </span>{" "}
         {/* Glow effect */}
         <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 via-teal-500/20 to-emerald-500/20 rounded-2xl opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-300 -z-10"></div>
       </button>
-      <ContactModal
-        isOpen={isContactModalOpen}
-        onClose={() => setIsContactModalOpen(false)}
-        setShowToast={setShowToast}
-      />
+      {/* Lazy load ContactModal only when needed */}
+      {isContactModalOpen && (
+        <Suspense
+          fallback={
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
+            </div>
+          }
+        >
+          <ContactModal
+            isOpen={isContactModalOpen}
+            onClose={() => setIsContactModalOpen(false)}
+            setShowToast={setShowToast}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

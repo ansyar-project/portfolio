@@ -1,128 +1,236 @@
 "use client";
 import React from "react";
-import { motion } from "framer-motion";
+import {
+  Github,
+  Linkedin,
+  Mail,
+  Heart,
+  ArrowUp,
+  MapPin,
+  Clock,
+} from "lucide-react";
+import { BackgroundGradient } from "./ui/BackgroundGradient";
 
-export default function Footer() {
+interface FooterProps {
+  profile?: {
+    name?: string;
+    email?: string;
+    github?: string;
+    linkedin?: string;
+    location?: string;
+  };
+}
+
+const Footer: React.FC<FooterProps> = ({ profile }) => {
   const currentYear = new Date().getFullYear();
 
-  const socialLinks = [
-    {
-      name: "GitHub",
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-        </svg>
-      ),
-      href: "https://github.com/mansyar",
-    },
-    {
-      name: "LinkedIn",
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-9h3v9zm-1.5-10.28c-.97 0-1.75-.79-1.75-1.75s.78-1.75 1.75-1.75 1.75.79 1.75 1.75-.78 1.75-1.75 1.75zm15.5 10.28h-3v-4.5c0-1.08-.02-2.47-1.5-2.47-1.5 0-1.73 1.17-1.73 2.39v4.58h-3v-9h2.88v1.23h.04c.4-.76 1.38-1.56 2.84-1.56 3.04 0 3.6 2 3.6 4.59v5.74z" />
-        </svg>
-      ),
-      href: "https://www.linkedin.com/in/muhammad-ansyar-rafi-putra-904a75157/",
-    },
-    
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const quickLinks = [
+    { name: "Home", href: "#home" },
+    { name: "About", href: "#about" },
+    { name: "Skills", href: "#skills" },
+    { name: "Projects", href: "#projects" },
+    { name: "Portfolio", href: "#portfolio" },
+    { name: "Contact", href: "#contact" },
+  ];
+
+  const services = [
+    "Web Development",
+    "UI/UX Design",
+    "Full-Stack Solutions",
+    "API Development",
+    "Database Design",
+    "Code Review",
   ];
 
   return (
-    <footer className="relative mt-32 overflow-hidden">
+    <footer className="relative bg-black text-white overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-
-      {/* Floating Particles */}
-      <div className="absolute top-0 left-1/4 w-2 h-2 bg-blue-400/30 rounded-full animate-float" />
-      <div className="absolute top-8 right-1/3 w-1.5 h-1.5 bg-violet-400/40 rounded-full animate-float-delayed" />
-      <div className="absolute bottom-8 left-1/2 w-1 h-1 bg-purple-400/50 rounded-full animate-float" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16">
-        {/* Main Footer Content */}
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          {/* Logo/Brand */}
-          <motion.div
-            className="mb-8"
-            initial={{ scale: 0 }}
-            whileInView={{ scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            viewport={{ once: true }}
-          >
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500/20 to-violet-500/20 backdrop-blur-sm border border-white/10 rounded-2xl mb-4">
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">
-                P
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-2">Portfolio</h3>
-            <p className="text-gray-400 max-w-md mx-auto">
-              Crafting digital experiences with passion and precision
-            </p>
-          </motion.div>
-
-          {/* Social Links */}
-          <motion.div
-            className="flex justify-center gap-4 mb-8"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            viewport={{ once: true }}
-          >
-            {socialLinks.map((social, index) => (
-              <motion.a
-                key={social.name}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group p-3 bg-white/5 hover:bg-white/10 backdrop-blur-sm border border-white/10 hover:border-white/20 rounded-xl transition-all duration-300"
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                initial={{ opacity: 0, scale: 0 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.4 + index * 0.1 }}
-                viewport={{ once: true }}
-              >
-                <div className="text-gray-400 group-hover:text-white transition-colors duration-300">
-                  {social.icon}
-                </div>
-              </motion.a>
-            ))}
-          </motion.div>
-
-          {/* Divider */}
-          <motion.div
-            className="w-32 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-auto mb-8"
-            initial={{ scaleX: 0 }}
-            whileInView={{ scaleX: 1 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-            viewport={{ once: true }}
-          />
-
-          {/* Copyright */}
-          <motion.div
-            className="text-gray-400 text-sm"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <p className="mb-2">
-              &copy; {currentYear} Portfolio. All rights reserved.
-            </p>
-            <p className="text-xs text-gray-500">
-              Made with ❤️ using Next.js & Tailwind CSS
-            </p>
-          </motion.div>
-        </motion.div>
+      <div className="absolute inset-0">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-r from-emerald-500/5 to-teal-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-r from-purple-500/5 to-pink-500/5 rounded-full blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-neutral-900/50 to-transparent" />
       </div>
 
-      {/* Bottom Gradient */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+      <div className="relative z-10">
+        {/* Main Footer Content */}
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            {/* Brand Section */}
+            <div className="lg:col-span-4 space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                  {profile?.name || "Developer"}
+                </h3>
+                <p className="text-neutral-400 leading-relaxed max-w-md">
+                  Passionate full-stack developer crafting digital experiences
+                  that combine beautiful design with powerful functionality.
+                  Let&apos;s build something amazing together.
+                </p>
+              </div>
+
+              {/* Contact Info */}
+              <div className="space-y-3">
+                {profile?.email && (
+                  <div className="flex items-center gap-3 text-neutral-400 hover:text-emerald-400 transition-colors group">
+                    <Mail className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    <a href={`mailto:${profile.email}`} className="text-sm">
+                      {profile.email}
+                    </a>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3 text-neutral-400">
+                  <MapPin className="w-4 h-4" />
+                  <span className="text-sm">
+                    {profile?.location || "Available Worldwide"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3 text-neutral-400">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-sm">GMT+10 (Available 24/7)</span>
+                </div>
+              </div>
+
+              {/* Social Links */}
+              <div className="flex gap-4">
+                {profile?.github && (
+                  <a
+                    href={`https://github.com/${profile.github}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-300 hover:scale-110"
+                    aria-label="GitHub Profile"
+                  >
+                    <Github className="w-5 h-5 text-neutral-400 group-hover:text-emerald-400 transition-colors" />
+                  </a>
+                )}
+
+                {profile?.linkedin && (
+                  <a
+                    href={`https://linkedin.com/in/${profile.linkedin}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-blue-500/10 hover:border-blue-500/30 transition-all duration-300 hover:scale-110"
+                    aria-label="LinkedIn Profile"
+                  >
+                    <Linkedin className="w-5 h-5 text-neutral-400 group-hover:text-blue-400 transition-colors" />
+                  </a>
+                )}
+
+                <a
+                  href="#contact"
+                  className="group p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-purple-500/10 hover:border-purple-500/30 transition-all duration-300 hover:scale-110"
+                  aria-label="Contact Me"
+                >
+                  <Mail className="w-5 h-5 text-neutral-400 group-hover:text-purple-400 transition-colors" />
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div className="lg:col-span-3">
+              <h4 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full" />
+                Quick Links
+              </h4>
+              <ul className="space-y-3">
+                {quickLinks.map((link) => (
+                  <li key={link.name}>
+                    <a
+                      href={link.href}
+                      className="text-neutral-400 hover:text-emerald-400 transition-colors duration-300 text-sm flex items-center gap-2 group"
+                    >
+                      <div className="w-1 h-1 bg-neutral-600 group-hover:bg-emerald-400 rounded-full transition-colors" />
+                      {link.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Services */}
+            <div className="lg:col-span-3">
+              <h4 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
+                Services
+              </h4>
+              <ul className="space-y-3">
+                {services.map((service) => (
+                  <li key={service}>
+                    <span className="text-neutral-400 text-sm flex items-center gap-2 group">
+                      <div className="w-1 h-1 bg-neutral-600 rounded-full" />
+                      {service}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* CTA Card */}
+            <div className="lg:col-span-2">
+              <BackgroundGradient className="rounded-2xl p-1">
+                <div className="bg-neutral-900 rounded-2xl p-6 text-center space-y-4">
+                  <div className="w-12 h-12 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mx-auto">
+                    <Heart className="w-6 h-6 text-white" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-white">
+                    Love My Work?
+                  </h4>
+                  <p className="text-neutral-400 text-sm">
+                    Let&apos;s collaborate on your next project
+                  </p>
+                  <a
+                    href="#contact"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-medium rounded-lg hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 hover:scale-105"
+                  >
+                    Get In Touch
+                  </a>
+                </div>
+              </BackgroundGradient>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="border-t border-white/10 bg-black/50 backdrop-blur-sm">
+          <div className="max-w-7xl mx-auto px-6 py-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              {/* Copyright */}
+              <div className="flex items-center gap-2 text-neutral-400 text-sm">
+                <span>© {currentYear}</span>
+                <span className="text-emerald-400 font-medium">
+                  {profile?.name || "Developer"}
+                </span>
+                <span>• Made with</span>
+                <Heart className="w-4 h-4 text-red-500 animate-pulse" />
+                <span>using Next.js & TypeScript</span>
+              </div>
+
+              {/* Back to Top */}
+              <button
+                onClick={scrollToTop}
+                className="group flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-lg hover:bg-emerald-500/10 hover:border-emerald-500/30 transition-all duration-300 text-neutral-400 hover:text-emerald-400 text-sm"
+                aria-label="Back to top"
+              >
+                <span>Back to top</span>
+                <ArrowUp className="w-4 h-4 group-hover:-translate-y-1 transition-transform" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Elements */}
+        <div className="absolute bottom-20 left-10 w-2 h-2 bg-emerald-400 rounded-full animate-ping opacity-20" />
+        <div className="absolute top-20 right-20 w-1 h-1 bg-purple-400 rounded-full animate-pulse opacity-30" />
+        <div className="absolute bottom-40 right-10 w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce opacity-25" />
+      </div>
     </footer>
   );
-}
+};
+
+export default Footer;

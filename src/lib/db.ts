@@ -83,10 +83,9 @@ export async function updateProject(
           })),
         });
       }
-    }
-
-    // Update the project (exclude stacks from the data)
-    const { stacks, ...projectData } = data;
+    } // Update the project (exclude stacks from the data)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { stacks: _, ...projectData } = data;
     const updatedProject = await tx.project.update({
       where: { id },
       data: projectData,

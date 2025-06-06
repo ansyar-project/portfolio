@@ -6,18 +6,13 @@ import type { AuditLogEntry } from "@/lib/auditLogDb";
 export default function AuditLogViewer() {
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [filter, setFilter] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const fetchLogs = async () => {
       try {
-        setLoading(true);
         const auditLogs = await getAuditLogsAction(100);
         setLogs(auditLogs);
       } catch (error) {
         console.error("Failed to fetch audit logs:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
