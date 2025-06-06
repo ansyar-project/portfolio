@@ -88,7 +88,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
 COPY  --chown=nextjs:nodejs ./prisma ./prisma
 
 # Install only production dependencies
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 
 # Switch to non-root user
 USER nextjs
