@@ -77,7 +77,7 @@ COPY --from=builder --chown=node:node /app/public ./public
 COPY --from=builder --chown=node:node /app/healthcheck.js ./
 
 
-USER nonroot
+USER node
 EXPOSE 3000
 
 # Simplified health check using the script
