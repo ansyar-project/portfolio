@@ -29,21 +29,21 @@ model Skill {
 }
 
 model Project {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   title       String
   description String
   github      String?
   live        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   stacks      ProjectStack[]
 }
 
 model ProjectStack {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   name      String
-  project   Project  @relation(fields: [projectId], references: [id])
   projectId String
+  project   Project @relation(fields: [projectId], references: [id])
 }
 
 model PortfolioItem {
@@ -54,4 +54,17 @@ model PortfolioItem {
   link        String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  timestamp  DateTime @default(now())
+  userId     String
+  action     String
+  resource   String
+  resourceId String?
+  details    Json?
+  userAgent  String?
+  ip         String?
+  createdAt  DateTime @default(now())
 }

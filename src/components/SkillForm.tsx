@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useOptimistic } from "react";
 import type { Skill } from "@/lib/types";
 import {
   addSkillAction,
@@ -11,7 +11,33 @@ interface SkillFormProps {
   skills: Skill[];
 }
 
+type SkillAction =
+  | { type: "add"; skill: Skill }
+  | { type: "update"; id: string; skill: Partial<Skill> }
+  | { type: "delete"; id: string }
+  | { type: "revert"; skills: Skill[] };
+
 export default function SkillForm({ skills }: SkillFormProps) {
+  const [optimisticSkills, updateOptimisticSkills] = useOptimistic(
+    skills,
+    (state: Skill[], action: SkillAction) => {
+      switch (action.type) {
+        case "add":
+          return [...state, action.skill];
+        case "update":
+          return state.map((skill) =>
+            skill.id === action.id ? { ...skill, ...action.skill } : skill
+          );
+        case "delete":
+          return state.filter((skill) => skill.id !== action.id);
+        case "revert":
+          return action.skills;
+        default:
+          return state;
+      }
+    }
+  );
+
   const [form, setForm] = useState<{ name: string; level: string }>({
     name: "",
     level: "",
@@ -19,50 +45,94 @@ export default function SkillForm({ skills }: SkillFormProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    // Clear messages when user starts typing
+    if (error) setError(null);
+    if (success) setSuccess(null);
   };
 
   const handleEdit = (skill: Skill) => {
     setEditingId(skill.id);
     setForm({ name: skill.name, level: skill.level });
+    setError(null);
+    setSuccess(null);
   };
 
   const handleCancel = () => {
     setEditingId(null);
     setForm({ name: "", level: "" });
     setError(null);
+    setSuccess(null);
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
+
+    // Store current state for potential revert
+    const previousSkills = optimisticSkills;
+
     try {
       if (editingId) {
+        // Optimistic update
+        updateOptimisticSkills({ type: "update", id: editingId, skill: form });
+
         await updateSkillAction(editingId, form);
+        setSuccess("Skill updated successfully!");
       } else {
+        // Optimistic add with temporary ID
+        const tempSkill: Skill = {
+          id: `temp-${Date.now()}`,
+          name: form.name,
+          level: form.level,
+        };
+        updateOptimisticSkills({ type: "add", skill: tempSkill });
+
         await addSkillAction(form);
+        setSuccess("Skill added successfully!");
       }
       setForm({ name: "", level: "" });
       setEditingId(null);
-      // Optionally, refresh data here
-    } catch {
-      setError("Failed to save skill.");
+
+      // Auto-clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      // Revert optimistic updates on error
+      updateOptimisticSkills({ type: "revert", skills: previousSkills });
+      setError(err instanceof Error ? err.message : "Failed to save skill.");
     } finally {
       setLoading(false);
     }
   };
-
   const handleDelete = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this skill?")) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setSuccess(null);
+
+    // Store current state for potential revert
+    const previousSkills = optimisticSkills;
+
     try {
+      // Optimistic delete
+      updateOptimisticSkills({ type: "delete", id });
+
       await deleteSkillAction(id);
-      // Optionally, refresh data here
-    } catch {
-      setError("Failed to delete skill.");
+      setSuccess("Skill deleted successfully!");
+
+      // Auto-clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      // Revert optimistic updates on error
+      updateOptimisticSkills({ type: "revert", skills: previousSkills });
+      setError(err instanceof Error ? err.message : "Failed to delete skill.");
     } finally {
       setLoading(false);
     }
@@ -109,9 +179,19 @@ export default function SkillForm({ skills }: SkillFormProps) {
           </button>
         )}
       </form>
-      {error && <div className="text-red-600 mb-2">{error}</div>}
+      {/* Success/Error Messages */}
+      {success && (
+        <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded text-green-700 dark:text-green-300">
+          {success}
+        </div>
+      )}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-red-700 dark:text-red-300">
+          {error}
+        </div>
+      )}{" "}
       <ul className="divide-y border rounded">
-        {skills.map((skill) => (
+        {optimisticSkills.map((skill) => (
           <li
             key={skill.id}
             className="flex items-center justify-between px-3 py-2"

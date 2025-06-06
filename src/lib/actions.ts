@@ -17,78 +17,502 @@ import {
   deletePortfolioItem,
 } from "./db";
 import nodemailer from "nodemailer";
+import { revalidatePath } from "next/cache";
+import { rateLimit, RateLimitError } from "./rateLimit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "./authOptions";
+import { sanitizeInput, sanitizeHtml, sanitizeUrl } from "./utils";
+import { logAdminAction } from "./auditLogDb";
 
 // --- Profile Actions ---
 export async function getProfileAction() {
-  return getProfile();
+  try {
+    return await getProfile();
+  } catch (error) {
+    console.error("Failed to get profile:", error);
+    throw new Error("Failed to fetch profile");
+  }
 }
 
 export async function updateProfileAction(
   data: Parameters<typeof updateProfile>[0]
 ) {
-  return updateProfile(data);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 5 updates per minute
+    if (!rateLimit(`profile-update-${session.user?.name}`, 5, 60000)) {
+      throw new RateLimitError(
+        "Too many profile updates. Please wait a minute."
+      );
+    } // Validate and sanitize data
+    const profileData = data as {
+      name?: string;
+      title?: string;
+      bio?: string;
+      github?: string;
+      linkedin?: string;
+    };
+
+    if (
+      !profileData.name ||
+      typeof profileData.name !== "string" ||
+      !profileData.name.trim()
+    ) {
+      throw new Error("Name is required");
+    }
+    if (
+      !profileData.title ||
+      typeof profileData.title !== "string" ||
+      !profileData.title.trim()
+    ) {
+      throw new Error("Title is required");
+    }
+
+    // Sanitize input data
+    const sanitizedData = {
+      ...profileData,
+      name: sanitizeInput(profileData.name),
+      title: sanitizeInput(profileData.title),
+      bio: profileData.bio ? sanitizeHtml(profileData.bio) : profileData.bio,
+      github: profileData.github
+        ? sanitizeUrl(profileData.github)
+        : profileData.github,
+      linkedin: profileData.linkedin
+        ? sanitizeUrl(profileData.linkedin)
+        : profileData.linkedin,
+    };
+    const result = await updateProfile(sanitizedData);
+
+    // Log the action
+    await logAdminAction("UPDATE", "profile", undefined, {
+      name: sanitizedData.name,
+      title: sanitizedData.title,
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to update profile:", error);
+    if (error instanceof RateLimitError) {
+      throw error;
+    }
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to update profile"
+    );
+  }
 }
 
 // --- Skill Actions ---
 export async function getSkillsAction() {
-  return getSkills();
+  try {
+    return await getSkills();
+  } catch (error) {
+    console.error("Failed to get skills:", error);
+    throw new Error("Failed to fetch skills");
+  }
 }
 
 export async function addSkillAction(data: Parameters<typeof addSkill>[0]) {
-  return addSkill(data);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 10 skills per minute
+    if (!rateLimit(`skill-add-${session.user?.name}`, 10, 60000)) {
+      throw new RateLimitError(
+        "Too many skill additions. Please wait a minute."
+      );
+    }
+
+    if (!data.name?.trim()) {
+      throw new Error("Skill name is required");
+    }
+    if (!data.level?.trim()) {
+      throw new Error("Skill level is required");
+    }
+
+    // Sanitize input data
+    const sanitizedData = {
+      ...data,
+      name: sanitizeInput(data.name),
+      level: sanitizeInput(data.level),
+    };
+    const result = await addSkill(sanitizedData);
+
+    // Log the action
+    await logAdminAction("CREATE", "skill", result.id, {
+      name: sanitizedData.name,
+      level: sanitizedData.level,
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to add skill:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to add skill"
+    );
+  }
 }
 
 export async function updateSkillAction(
   id: string,
   data: Parameters<typeof updateSkill>[1]
 ) {
-  return updateSkill(id, data);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 20 updates per minute
+    if (!rateLimit(`skill-update-${session.user?.name}`, 20, 60000)) {
+      throw new RateLimitError("Too many skill updates. Please wait a minute.");
+    }
+    if (!id?.trim()) {
+      throw new Error("Skill ID is required");
+    }
+
+    // Sanitize input data if provided
+    const sanitizedData = data
+      ? {
+          ...data,
+          name: data.name ? sanitizeInput(data.name) : data.name,
+          level: data.level ? sanitizeInput(data.level) : data.level,
+        }
+      : data;
+    const result = await updateSkill(id, sanitizedData);
+
+    // Log the action
+    await logAdminAction("UPDATE", "skill", id, sanitizedData);
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to update skill:", error);
+    throw new Error("Failed to update skill");
+  }
 }
 
 export async function deleteSkillAction(id: string) {
-  return deleteSkill(id);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 10 deletions per minute
+    if (!rateLimit(`skill-delete-${session.user?.name}`, 10, 60000)) {
+      throw new RateLimitError(
+        "Too many skill deletions. Please wait a minute."
+      );
+    }
+
+    if (!id?.trim()) {
+      throw new Error("Skill ID is required");
+    }
+    const result = await deleteSkill(id);
+
+    // Log the action
+    await logAdminAction("DELETE", "skill", id);
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to delete skill:", error);
+    throw new Error("Failed to delete skill");
+  }
 }
 
 // --- Project Actions ---
 export async function getProjectsAction() {
-  return getProjects();
+  try {
+    return await getProjects();
+  } catch (error) {
+    console.error("Failed to get projects:", error);
+    throw new Error("Failed to fetch projects");
+  }
 }
 
 export async function addProjectAction(data: Parameters<typeof addProject>[0]) {
-  return addProject(data);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 10 projects per minute
+    if (!rateLimit(`project-add-${session.user?.name}`, 10, 60000)) {
+      throw new RateLimitError(
+        "Too many project additions. Please wait a minute."
+      );
+    }
+    if (!data.title?.trim()) {
+      throw new Error("Project title is required");
+    }
+    if (!data.description?.trim()) {
+      throw new Error("Project description is required");
+    }
+
+    // Sanitize input data
+    const sanitizedData = {
+      ...data,
+      title: sanitizeInput(data.title),
+      description: sanitizeHtml(data.description),
+      github: data.github ? sanitizeUrl(data.github) : data.github,
+      live: data.live ? sanitizeUrl(data.live) : data.live,
+    };
+    const result = await addProject(sanitizedData);
+
+    // Log the action
+    await logAdminAction("CREATE", "project", result.id, {
+      title: sanitizedData.title,
+      description: sanitizedData.description.substring(0, 100) + "...",
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to add project:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to add project"
+    );
+  }
 }
 
 export async function updateProjectAction(
   id: string,
   data: Parameters<typeof updateProject>[1]
 ) {
-  return updateProject(id, data);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 20 updates per minute
+    if (!rateLimit(`project-update-${session.user?.name}`, 20, 60000)) {
+      throw new RateLimitError(
+        "Too many project updates. Please wait a minute."
+      );
+    }
+    if (!id?.trim()) {
+      throw new Error("Project ID is required");
+    } // Sanitize input data if provided
+    const sanitizedData = data
+      ? {
+          ...data,
+          title: data.title ? sanitizeInput(data.title) : data.title,
+          description: data.description
+            ? sanitizeHtml(data.description)
+            : data.description,
+          github: data.github ? sanitizeUrl(data.github) : data.github,
+          live: data.live ? sanitizeUrl(data.live) : data.live,
+          stacks: data.stacks
+            ? data.stacks.map((stack) => ({ name: sanitizeInput(stack.name) }))
+            : data.stacks,
+        }
+      : data;
+    const result = await updateProject(id, sanitizedData);
+
+    // Log the action
+    await logAdminAction("UPDATE", "project", id, sanitizedData);
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to update project:", error);
+    throw new Error("Failed to update project");
+  }
 }
 
 export async function deleteProjectAction(id: string) {
-  return deleteProject(id);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 10 deletions per minute
+    if (!rateLimit(`project-delete-${session.user?.name}`, 10, 60000)) {
+      throw new RateLimitError(
+        "Too many project deletions. Please wait a minute."
+      );
+    }
+
+    if (!id?.trim()) {
+      throw new Error("Project ID is required");
+    }
+    const result = await deleteProject(id);
+
+    // Log the action
+    await logAdminAction("DELETE", "project", id);
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to delete project:", error);
+    throw new Error("Failed to delete project");
+  }
 }
 
 // --- PortfolioItem Actions ---
 export async function getPortfolioItemsAction() {
-  return getPortfolioItems();
+  try {
+    return await getPortfolioItems();
+  } catch (error) {
+    console.error("Failed to get portfolio items:", error);
+    throw new Error("Failed to fetch portfolio items");
+  }
 }
 
 export async function addPortfolioItemAction(
   data: Parameters<typeof addPortfolioItem>[0]
 ) {
-  return addPortfolioItem(data);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 10 items per minute
+    if (!rateLimit(`portfolio-add-${session.user?.name}`, 10, 60000)) {
+      throw new RateLimitError(
+        "Too many portfolio additions. Please wait a minute."
+      );
+    }
+    if (!data.title?.trim()) {
+      throw new Error("Portfolio item title is required");
+    }
+    if (!data.description?.trim()) {
+      throw new Error("Portfolio item description is required");
+    }
+
+    // Sanitize input data
+    const sanitizedData = {
+      ...data,
+      title: sanitizeInput(data.title),
+      description: sanitizeHtml(data.description),
+      image: data.image ? sanitizeUrl(data.image) : data.image,
+      link: data.link ? sanitizeUrl(data.link) : data.link,
+    };
+    const result = await addPortfolioItem(sanitizedData);
+
+    // Log the action
+    await logAdminAction("CREATE", "portfolio_item", result.id, {
+      title: sanitizedData.title,
+      description: sanitizedData.description.substring(0, 100) + "...",
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to add portfolio item:", error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to add portfolio item"
+    );
+  }
 }
 
 export async function updatePortfolioItemAction(
   id: string,
   data: Parameters<typeof updatePortfolioItem>[1]
 ) {
-  return updatePortfolioItem(id, data);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 20 updates per minute
+    if (!rateLimit(`portfolio-update-${session.user?.name}`, 20, 60000)) {
+      throw new RateLimitError(
+        "Too many portfolio updates. Please wait a minute."
+      );
+    }
+    if (!id?.trim()) {
+      throw new Error("Portfolio item ID is required");
+    }
+
+    // Sanitize input data if provided
+    const sanitizedData = data
+      ? {
+          ...data,
+          title: data.title ? sanitizeInput(data.title) : data.title,
+          description: data.description
+            ? sanitizeHtml(data.description)
+            : data.description,
+          image: data.image ? sanitizeUrl(data.image) : data.image,
+          link: data.link ? sanitizeUrl(data.link) : data.link,
+        }
+      : data;
+    const result = await updatePortfolioItem(id, sanitizedData);
+
+    // Log the action
+    await logAdminAction("UPDATE", "portfolio_item", id, sanitizedData);
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to update portfolio item:", error);
+    throw new Error("Failed to update portfolio item");
+  }
 }
 
 export async function deletePortfolioItemAction(id: string) {
-  return deletePortfolioItem(id);
+  try {
+    // Check authentication
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    // Rate limiting: 10 deletions per minute
+    if (!rateLimit(`portfolio-delete-${session.user?.name}`, 10, 60000)) {
+      throw new RateLimitError(
+        "Too many portfolio deletions. Please wait a minute."
+      );
+    }
+
+    if (!id?.trim()) {
+      throw new Error("Portfolio item ID is required");
+    }
+    const result = await deletePortfolioItem(id);
+
+    // Log the action
+    await logAdminAction("DELETE", "portfolio_item", id);
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+    return result;
+  } catch (error) {
+    console.error("Failed to delete portfolio item:", error);
+    throw new Error("Failed to delete portfolio item");
+  }
 }
 
 // Create transporter outside the function (singleton pattern)
@@ -122,15 +546,19 @@ const getTransporter = () => {
 // --- Contact Form Action ---
 export async function contactFormAction(formData: FormData) {
   "use server";
-
   // Early validation with better error messages
-  const name = formData.get("name")?.toString()?.trim();
-  const email = formData.get("email")?.toString()?.trim();
-  const message = formData.get("message")?.toString()?.trim();
+  const rawName = formData.get("name")?.toString()?.trim();
+  const rawEmail = formData.get("email")?.toString()?.trim();
+  const rawMessage = formData.get("message")?.toString()?.trim();
 
-  if (!name || !email || !message) {
+  if (!rawName || !rawEmail || !rawMessage) {
     return { ok: false, error: "All fields are required." };
   }
+
+  // Sanitize inputs
+  const name = sanitizeInput(rawName);
+  const email = sanitizeInput(rawEmail);
+  const message = sanitizeInput(rawMessage);
 
   // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

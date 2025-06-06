@@ -64,13 +64,47 @@ export async function updateProject(
     description: string;
     github?: string;
     live?: string;
+    stacks?: { name: string }[];
   }>
 ) {
-  return prisma.project.update({ where: { id }, data });
+  // Use transaction to handle both project and stacks update atomically
+  return prisma.$transaction(async (tx) => {
+    // If stacks are provided, replace all existing stacks
+    if (data.stacks !== undefined) {
+      // First delete all existing stacks
+      await tx.projectStack.deleteMany({ where: { projectId: id } });
+
+      // Create new stacks if any
+      if (data.stacks.length > 0) {
+        await tx.projectStack.createMany({
+          data: data.stacks.map((stack) => ({
+            name: stack.name,
+            projectId: id,
+          })),
+        });
+      }
+    }
+
+    // Update the project (exclude stacks from the data)
+    const { stacks, ...projectData } = data;
+    const updatedProject = await tx.project.update({
+      where: { id },
+      data: projectData,
+      include: { stacks: true },
+    });
+
+    return updatedProject;
+  });
 }
 
 export async function deleteProject(id: string) {
-  return prisma.project.delete({ where: { id } });
+  // Use transaction to ensure both project and stacks are deleted atomically
+  return prisma.$transaction(async (tx) => {
+    // First delete related stacks
+    await tx.projectStack.deleteMany({ where: { projectId: id } });
+    // Then delete the project
+    return tx.project.delete({ where: { id } });
+  });
 }
 
 // --- Portfolio Items ---

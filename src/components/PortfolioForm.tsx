@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { PortfolioItem } from "@/lib/types";
 import {
   addPortfolioItemAction,
@@ -21,6 +21,19 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Auto-clear messages after 3 seconds
+  useEffect(() => {
+    if (success || error) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+        setError(null);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [success, error]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -37,20 +50,23 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
       link: item.link ?? "",
     });
   };
-
   const handleCancel = () => {
     setEditingId(null);
     setForm({ title: "", description: "", image: "", link: "" });
     setError(null);
+    setSuccess(null);
+    setDeleteConfirm(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       if (editingId) {
         await updatePortfolioItemAction(editingId, form);
+        setSuccess("Portfolio item updated successfully!");
       } else {
         await addPortfolioItemAction({
           title: form.title ?? "",
@@ -58,25 +74,36 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
           image: form.image,
           link: form.link,
         });
+        setSuccess("Portfolio item added successfully!");
       }
       setForm({ title: "", description: "", image: "", link: "" });
       setEditingId(null);
-      // Optionally, refresh data here
-    } catch {
-      setError("Failed to save portfolio item.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to save portfolio item."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string, title: string) => {
+    if (deleteConfirm !== id) {
+      setDeleteConfirm(id);
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       await deletePortfolioItemAction(id);
-      // Optionally, refresh data here
-    } catch {
-      setError("Failed to delete portfolio item.");
+      setSuccess(`Portfolio item "${title}" deleted successfully!`);
+      setDeleteConfirm(null);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to delete portfolio item."
+      );
     } finally {
       setLoading(false);
     }
@@ -135,9 +162,23 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
               Cancel
             </button>
           )}
-        </div>
+        </div>{" "}
       </form>
-      {error && <div className="text-red-600 mb-2">{error}</div>}
+
+      {/* Success Message */}
+      {success && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+          {success}
+        </div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          {error}
+        </div>
+      )}
+
       <ul className="divide-y border rounded">
         {items.map((item) => (
           <li
@@ -160,15 +201,29 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
                 Edit
               </button>
               <button
-                className="text-red-600 hover:underline text-xs"
-                onClick={() => handleDelete(item.id)}
+                className={`text-xs ${
+                  deleteConfirm === item.id
+                    ? "text-red-800 bg-red-100 px-2 py-1 rounded font-semibold"
+                    : "text-red-600 hover:underline"
+                }`}
+                onClick={() => handleDelete(item.id, item.title)}
                 type="button"
                 aria-label={`Delete ${item.title}`}
                 disabled={loading}
               >
-                Delete
+                {deleteConfirm === item.id ? "Confirm Delete" : "Delete"}
               </button>
-            </span>
+              {deleteConfirm === item.id && (
+                <button
+                  className="text-gray-600 hover:underline text-xs"
+                  onClick={() => setDeleteConfirm(null)}
+                  type="button"
+                  aria-label="Cancel delete"
+                >
+                  Cancel
+                </button>
+              )}
+            </span>{" "}
           </li>
         ))}
       </ul>

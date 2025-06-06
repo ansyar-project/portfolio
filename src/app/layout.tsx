@@ -30,9 +30,25 @@ export const metadata: Metadata = {
     "Tailwind CSS",
     "Projects",
     "Skills",
+    "Melbourne",
+    "Australia",
+    "Software Engineer",
+    "Frontend Developer",
+    "Backend Developer",
   ],
   authors: [{ name: "Muhammad Ansyar Rafi Putra" }],
   creator: "Muhammad Ansyar Rafi Putra",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
     title:
       "Muhammad Ansyar Rafi Putra | Full Stack Developer, Data Expert, DevOps",
@@ -50,6 +66,13 @@ export const metadata: Metadata = {
     ],
     locale: "en_US",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Muhammad Ansyar Rafi Putra | Full Stack Developer",
+    description:
+      "Full Stack Developer, Data Expert, and DevOps professional from Melbourne, Australia",
+    images: ["https://ansyar-world.top/og-image.png"],
   },
 
   metadataBase: new URL("https://ansyar-world.top"),
