@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   images: {
@@ -10,6 +11,17 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
     ],
+  },
+  output: "standalone",
+  experimental: {
+  },
+  // Remove unused dependencies from bundle
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      "@prisma/client": require.resolve("@prisma/client"),
+    };
+    return config;
   },
 };
 

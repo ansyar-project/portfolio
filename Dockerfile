@@ -55,53 +55,18 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # Generate Prisma client and build the app
 RUN pnpm build
 
+# After build, clean dev dependencies
+RUN pnpm prune --prod
+
 # 3. Production image
-FROM node:22-alpine AS runner
+FROM gcr.io/distroless/nodejs22-debian12 AS runner
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apk add --no-cache \
-    libc6-compat \
-    dumb-init \
-    curl \
-    && rm -rf /var/cache/apk/*
+# Copy standalone build (much smaller)
+COPY --from=builder --chown=nonroot:nonroot /app/.next/standalone ./
+COPY --from=builder --chown=nonroot:nonroot /app/.next/static ./.next/static
+COPY --from=builder --chown=nonroot:nonroot /app/public ./public
 
-# Create non-root user for security
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
-
-# Enable pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Set production environment
-ENV NODE_ENV=production \
-    NEXT_TELEMETRY_DISABLED=1 \
-    PORT=3000
-
-# Copy necessary files from builder
-COPY --from=builder --chown=nextjs:nodejs /app/next.config.ts ./
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-
-# Copy Prisma files for runtime
-COPY  --chown=nextjs:nodejs ./prisma ./prisma
-
-# Install only production dependencies
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-
-# Switch to non-root user
-USER nextjs
-
-# Expose port
+USER nonroot
 EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3000/api/health || exit 1
-
-# Use dumb-init for better signal handling
-ENTRYPOINT ["dumb-init", "--"]
-
-# Start the application
-CMD ["pnpm", "start"]
+CMD ["server.js"]
