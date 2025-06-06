@@ -6,7 +6,6 @@ import {
   getProjectsAction,
   getPortfolioItemsAction,
 } from "@/lib/actions";
-import ProjectImage from "@/components/ProjectImage";
 
 import Footer from "@/components/Footer";
 import ScrollProgress from "@/components/ScrollProgress";
@@ -20,6 +19,7 @@ import ContactModalWrapper from "@/components/ContactModalWrapper";
 import LazySection from "@/components/LazySection";
 import AnimatedSection from "@/components/AnimatedSection";
 import StaggeredGrid from "@/components/StaggeredGrid";
+import FilteredProjectsSection from "@/components/FilteredProjectsSection";
 
 // Aceternity UI Components
 import { TypewriterEffectSmooth } from "@/components/ui/TypewriterEffect";
@@ -771,131 +771,7 @@ export default async function Home() {
                   </p>
                 </AnimatedSection>
 
-                {projects && projects.length > 0 ? (
-                  <StaggeredGrid
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                    staggerDelay={200}
-                    animation="slideUp"
-                  >
-                    {projects.map((project) => (
-                      <div
-                        key={project.id}
-                        className="group relative bg-white dark:bg-neutral-900 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-[1.02] border border-neutral-200 dark:border-neutral-700"
-                      >
-                        {/* Project Preview */}
-                        <div className="aspect-video bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 relative overflow-hidden">
-                          {project.image ? (
-                            <>
-                              <ProjectImage
-                                src={project.image}
-                                alt={`${project.title} preview`}
-                                width={400}
-                                height={225}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                placeholder="blur"
-                                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyLjzSlCJiWzcs4PvXWdTOkLoBv/9k="
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            </>
-                          ) : null}
-                          {/* Fallback gradient with project icon - shown when no image or image fails to load */}
-                          <div
-                            className={`absolute inset-0 ${
-                              project.image ? "hidden" : "block"
-                            }`}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-teal-500/20" />
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center">
-                                <Code className="w-10 h-10 text-white/60" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                          <div className="absolute top-4 right-4 flex gap-2">
-                            {project.github && (
-                              <a
-                                href={project.github}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm rounded-full hover:scale-110 transition-transform"
-                                aria-label={`${project.title} GitHub`}
-                              >
-                                <Github className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
-                              </a>
-                            )}
-                            {project.live && (
-                              <a
-                                href={project.live}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 bg-white/90 dark:bg-neutral-800/90 backdrop-blur-sm rounded-full hover:scale-110 transition-transform"
-                                aria-label={`${project.title} Live Demo`}
-                              >
-                                <ExternalLink className="w-4 h-4 text-neutral-700 dark:text-neutral-300" />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Project Content */}
-                        <div className="p-6">
-                          <h3 className="text-xl font-bold text-neutral-900 dark:text-white mb-3 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                            {project.title}
-                          </h3>
-                          <p className="text-neutral-600 dark:text-neutral-300 mb-4 leading-relaxed">
-                            {project.description}
-                          </p>
-
-                          {/* Tech Stack */}
-                          <div className="flex flex-wrap gap-2 mb-6">
-                            {project.stacks?.slice(0, 4).map((stack) => (
-                              <span
-                                key={stack.name}
-                                className="px-3 py-1 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full"
-                              >
-                                {stack.name}
-                              </span>
-                            ))}
-                            {project.stacks && project.stacks.length > 4 && (
-                              <span className="px-3 py-1 text-xs font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-full">
-                                +{project.stacks.length - 4} more
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Action Buttons */}
-                          <div className="flex gap-3">
-                            {project.live && (
-                              <a
-                                href={project.live}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-medium rounded-xl hover:shadow-lg hover:shadow-emerald-500/25 transition-all duration-300 hover:scale-105"
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                                Live Demo
-                              </a>
-                            )}
-                            {project.github && (
-                              <a
-                                href={project.github}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-neutral-800 dark:bg-neutral-700 text-white text-sm font-medium rounded-xl hover:bg-neutral-700 dark:hover:bg-neutral-600 transition-all duration-300 hover:scale-105"
-                              >
-                                <Github className="w-4 h-4" />
-                                Code
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </StaggeredGrid>
-                ) : (
-                  <LoadingSkeleton type="projects" count={6} />
-                )}
+                <FilteredProjectsSection projects={projects} />
               </div>
             </section>
           </ErrorBoundary>

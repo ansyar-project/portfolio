@@ -54,7 +54,6 @@ export default function AuditLogViewer() {
       <h3 className="text-lg font-semibold mb-4 text-foreground">
         Recent Admin Actions
       </h3>
-
       <div className="mb-4">
         <input
           type="text"
@@ -64,9 +63,7 @@ export default function AuditLogViewer() {
           onChange={(e) => setFilter(e.target.value)}
         />
       </div>
-
       <div className="bg-background border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden shadow-sm">
-        {" "}
         <div className="max-h-96 overflow-y-auto">
           {filteredLogs.length === 0 ? (
             <div className="p-4 text-gray-500 dark:text-gray-400 text-center">
@@ -92,7 +89,7 @@ export default function AuditLogViewer() {
                     Details
                   </th>
                 </tr>
-              </thead>{" "}
+              </thead>
               <tbody>
                 {filteredLogs.map((log, index) => (
                   <tr
