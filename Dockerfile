@@ -70,8 +70,8 @@ COPY --from=builder --chown=nonroot:nonroot /app/public ./public
 USER nonroot
 EXPOSE 3000
 
-# Add health check
+# Fix health check for distroless - use node directly without shell
 HEALTHCHECK --interval=5s --timeout=10s --start-period=5s --retries=5 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+  CMD ["node", "-e", "require('http').get('http://localhost:3000/api/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
 
 CMD ["server.js"]
