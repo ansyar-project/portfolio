@@ -1,10 +1,11 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { Project } from "@/lib/types";
 import {
   addProjectAction,
   updateProjectAction,
   deleteProjectAction,
+  getAllUniqueStacksAction,
 } from "@/lib/actions";
 import ImageUpload from "./ImageUpload";
 
@@ -34,6 +35,10 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
   const [success, setSuccess] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [stackInput, setStackInput] = useState("");
+  const [availableStacks, setAvailableStacks] = useState<string[]>([]);
+  const [showStackSuggestions, setShowStackSuggestions] = useState(false);
+  const [filteredStacks, setFilteredStacks] = useState<string[]>([]);
+  const stackInputRef = useRef<HTMLDivElement>(null);
 
   // Auto-clear messages after 3 seconds
   useEffect(() => {
@@ -45,6 +50,55 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       return () => clearTimeout(timer);
     }
   }, [success, error]);
+
+  // Load available stacks on component mount
+  useEffect(() => {
+    const loadAvailableStacks = async () => {
+      try {
+        const stacks = await getAllUniqueStacksAction();
+        setAvailableStacks(stacks);
+      } catch (error) {
+        console.error("Failed to load available stacks:", error);
+      }
+    };
+    loadAvailableStacks();
+  }, []);
+
+  // Filter stacks based on input
+  useEffect(() => {
+    if (stackInput.trim()) {
+      const filtered = availableStacks.filter(
+        (stack) =>
+          stack.toLowerCase().includes(stackInput.toLowerCase()) &&
+          !form.stacks?.some(
+            (existingStack) =>
+              existingStack.name.toLowerCase() === stack.toLowerCase()
+          )
+      );
+      setFilteredStacks(filtered);
+      setShowStackSuggestions(filtered.length > 0);
+    } else {
+      setFilteredStacks([]);
+      setShowStackSuggestions(false);
+    }
+  }, [stackInput, availableStacks, form.stacks]);
+
+  // Handle clicking outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        stackInputRef.current &&
+        !stackInputRef.current.contains(event.target as Node)
+      ) {
+        setShowStackSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -132,7 +186,6 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       setLoading(false);
     }
   };
-
   const addStack = () => {
     if (
       stackInput.trim() &&
@@ -145,6 +198,22 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
         stacks: [...(prev.stacks || []), { name: stackInput.trim() }],
       }));
       setStackInput("");
+      setShowStackSuggestions(false);
+    }
+  };
+
+  const selectStackFromSuggestion = (stackName: string) => {
+    if (
+      !form.stacks?.some(
+        (stack) => stack.name.toLowerCase() === stackName.toLowerCase()
+      )
+    ) {
+      setForm((prev) => ({
+        ...prev,
+        stacks: [...(prev.stacks || []), { name: stackName }],
+      }));
+      setStackInput("");
+      setShowStackSuggestions(false);
     }
   };
 
@@ -154,11 +223,12 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       stacks: prev.stacks?.filter((_, index) => index !== indexToRemove) || [],
     }));
   };
-
   const handleStackInputKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
       addStack();
+    } else if (e.key === "Escape") {
+      setShowStackSuggestions(false);
     }
   };
 
@@ -201,21 +271,43 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
           placeholder="Live URL"
           value={form.live}
           onChange={handleChange}
-        />
+        />{" "}
         {/* Technology Stack Section */}
         <div className="border rounded px-3 py-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Technology Stack
-          </label>
-          <div className="flex gap-2 mb-2">
-            <input
-              className="flex-1 border rounded px-2 py-1 text-sm"
-              type="text"
-              placeholder="Add technology (e.g., React, Node.js)"
-              value={stackInput}
-              onChange={(e) => setStackInput(e.target.value)}
-              onKeyPress={handleStackInputKeyPress}
-            />
+          </label>{" "}
+          <div className="relative flex gap-2 mb-2">
+            <div className="flex-1 relative" ref={stackInputRef}>
+              <input
+                className="w-full border rounded px-2 py-1 text-sm"
+                type="text"
+                placeholder="Add technology (e.g., React, Node.js)"
+                value={stackInput}
+                onChange={(e) => setStackInput(e.target.value)}
+                onKeyDown={handleStackInputKeyPress}
+                onFocus={() => {
+                  if (filteredStacks.length > 0) {
+                    setShowStackSuggestions(true);
+                  }
+                }}
+              />
+              {/* Autocomplete Dropdown */}
+              {showStackSuggestions && filteredStacks.length > 0 && (
+                <div className="absolute top-full left-0 right-0 z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-b-md shadow-lg max-h-40 overflow-y-auto">
+                  {filteredStacks.map((stack, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => selectStackFromSuggestion(stack)}
+                      className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+                    >
+                      {stack}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={addStack}

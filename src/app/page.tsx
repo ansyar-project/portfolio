@@ -351,16 +351,16 @@ export default async function Home() {
 
       {/* Enhanced Main Content */}
       <main className="relative z-10 space-y-40 py-20">
+        {/* About Section Anchor */}
+        <div id="about" className="gpu-accelerate"></div>
+
         {/* Revolutionary About Section */}
         <LazySection
           fallback={
             <div className="h-screen bg-gradient-to-b from-black to-neutral-900" />
           }
         >
-          <section
-            id="about"
-            className="relative min-h-screen flex items-center bg-white dark:bg-black"
-          >
+          <section className="relative min-h-screen flex items-center bg-white dark:bg-black">
             {/* Background Effects */}
             <div className="absolute inset-0 overflow-hidden">
               <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl animate-pulse" />
@@ -569,25 +569,29 @@ export default async function Home() {
                               icon: Zap,
                               title: "Lightning Fast Development",
                               desc: "Rapid prototyping and efficient code delivery with modern frameworks",
-                              color: "yellow",
+                              bgClass: "bg-yellow-100 dark:bg-yellow-900/30",
+                              iconClass: "text-yellow-600 dark:text-yellow-400",
                             },
                             {
                               icon: Sparkles,
                               title: "Modern Design Systems",
                               desc: "Clean, accessible, and user-centric interface design principles",
-                              color: "pink",
+                              bgClass: "bg-pink-100 dark:bg-pink-900/30",
+                              iconClass: "text-pink-600 dark:text-pink-400",
                             },
                             {
                               icon: Code,
                               title: "Clean Architecture",
                               desc: "Maintainable, scalable, and well-documented code structures",
-                              color: "blue",
+                              bgClass: "bg-blue-100 dark:bg-blue-900/30",
+                              iconClass: "text-blue-600 dark:text-blue-400",
                             },
                             {
                               icon: Rocket,
                               title: "Performance Optimization",
                               desc: "Speed-focused development with best practices and modern tools",
-                              color: "green",
+                              bgClass: "bg-green-100 dark:bg-green-900/30",
+                              iconClass: "text-green-600 dark:text-green-400",
                             },
                           ].map((item, index) => (
                             <div
@@ -595,10 +599,10 @@ export default async function Home() {
                               className="group flex items-start gap-4 p-4 rounded-2xl hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-all duration-300"
                             >
                               <div
-                                className={`p-3 bg-${item.color}-100 dark:bg-${item.color}-900/30 rounded-xl group-hover:scale-110 transition-transform`}
+                                className={`p-3 ${item.bgClass} rounded-xl group-hover:scale-110 transition-transform`}
                               >
                                 <item.icon
-                                  className={`w-5 h-5 text-${item.color}-600 dark:text-${item.color}-400`}
+                                  className={`w-5 h-5 ${item.iconClass}`}
                                 />
                               </div>
                               <div className="flex-1">
@@ -643,6 +647,9 @@ export default async function Home() {
           </section>
         </LazySection>
 
+        {/* Skills Section Anchor */}
+        <div id="skills" className="gpu-accelerate"></div>
+
         {/* Enhanced Skills Section */}
         <LazySection
           fallback={
@@ -656,10 +663,7 @@ export default async function Home() {
           rootMargin="600px"
         >
           <ErrorBoundary>
-            <section
-              id="skills"
-              className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen overflow-hidden"
-            >
+            <section className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen overflow-hidden">
               <div className="relative z-10">
                 {/* Section Header */}
                 <AnimatedSection
@@ -733,6 +737,9 @@ export default async function Home() {
           </ErrorBoundary>
         </LazySection>
 
+        {/* Projects Section Anchor */}
+        <div id="projects" className="gpu-accelerate"></div>
+
         {/* Enhanced Projects Section */}
         <LazySection
           fallback={
@@ -746,10 +753,7 @@ export default async function Home() {
           rootMargin="500px"
         >
           <ErrorBoundary>
-            <section
-              className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen"
-              id="projects"
-            >
+            <section className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen">
               <div className="max-w-7xl mx-auto px-6">
                 <AnimatedSection
                   animation="slideUp"
@@ -897,6 +901,9 @@ export default async function Home() {
           </ErrorBoundary>
         </LazySection>
 
+        {/* Portfolio Section Anchor */}
+        <div id="portfolio" className="gpu-accelerate"></div>
+
         {/* Enhanced Portfolio Section */}
         <LazySection
           fallback={
@@ -910,10 +917,7 @@ export default async function Home() {
           rootMargin="500px"
         >
           <ErrorBoundary>
-            <section
-              className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen"
-              id="portfolio"
-            >
+            <section className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen">
               <div className="max-w-7xl mx-auto px-6">
                 <AnimatedSection
                   animation="slideUp"

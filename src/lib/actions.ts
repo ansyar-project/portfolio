@@ -15,6 +15,7 @@ import {
   addPortfolioItem,
   updatePortfolioItem,
   deletePortfolioItem,
+  getAllUniqueStacks,
 } from "./db";
 import nodemailer from "nodemailer";
 import { revalidatePath } from "next/cache";
@@ -390,6 +391,15 @@ export async function deleteProjectAction(id: string) {
   } catch (error) {
     console.error("Failed to delete project:", error);
     throw new Error("Failed to delete project");
+  }
+}
+
+export async function getAllUniqueStacksAction() {
+  try {
+    return await getAllUniqueStacks();
+  } catch (error) {
+    console.error("Failed to get unique stacks:", error);
+    throw new Error("Failed to fetch unique stacks");
   }
 }
 

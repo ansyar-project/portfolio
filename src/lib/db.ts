@@ -137,3 +137,13 @@ export async function updatePortfolioItem(
 export async function deletePortfolioItem(id: string) {
   return prisma.portfolioItem.delete({ where: { id } });
 }
+
+// --- Stacks ---
+export async function getAllUniqueStacks() {
+  const stacks = await prisma.projectStack.findMany({
+    select: { name: true },
+    distinct: ["name"],
+    orderBy: { name: "asc" },
+  });
+  return stacks.map((stack) => stack.name);
+}
