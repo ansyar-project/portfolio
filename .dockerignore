@@ -1,6 +1,17 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Node dependencies
+# Docker files
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+docker-compose*.yaml
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Node dependencies (will be installed in container)
 /node_modules
 /.pnp
 .pnp.*
@@ -10,58 +21,116 @@
 !.yarn/releases
 !.yarn/versions
 
+# Package manager lock files (keep these for reproducible builds)
+# Uncomment the ones you're NOT using:
+package-lock.json
+yarn.lock
+# pnpm-lock.yaml
+
 # Testing
 /coverage
+*.lcov
+/test-results/
+/playwright-report/
 
 # Next.js build output
 /.next/
 /out/
 
-# Production build
+# Production build (unless you're building inside container)
 /build
+/dist
 
-# Misc
+# Documentation
+README*.md
+CHANGELOG*.md
+LICENSE*
+*.md
+/docs/
+
+# Misc development files
 .DS_Store
 *.pem
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
 
-# Environment variables
+# Environment variables (be selective)
 .env*
 !.env.example
+# Include production env if needed:
+# !.env.production
 
-# Vercel deployment
+# Cloud deployment files
 .vercel
+.netlify
+.firebase/
+.gcloudignore
 
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-# Prisma
+# Cache files
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.cache/
+.turbo/
+
+# Prisma (development database)
 /prisma/dev.db
 /prisma/dev.db-journal
 /prisma/migrations/
 
-# VSCode settings
+# IDE settings
 .vscode/
-
-# Local IDE settings
 .idea/
 *.sublime-workspace
 *.sublime-project
+*.swp
+*.swo
+*~
 
-# Mac system files
+# System files
 .AppleDouble
 .LSOverride
-
-# Windows system files
+Icon?
 Thumbs.db
+Thumbs.db:encryptable
 ehthumbs.db
 Desktop.ini
+$RECYCLE.BIN/
 
-# Optional: Ignore local data/uploads if any
+# Temporary folders
+tmp/
+temp/
+.tmp/
+
+# Optional: Ignore local uploads/data
 /public/uploads
+/uploads/
+/data/
+
+# Storybook
+/storybook-static
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+azure-pipelines.yml
+
+# Monitoring and analytics
+.nyc_output/
+/reports/
