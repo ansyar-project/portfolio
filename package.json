@@ -7,14 +7,19 @@
   },
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && next build && npm run postbuild",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage --watchAll=false",
     "test:coverage": "jest --coverage",
-    "test:debug": "jest --verbose"
+    "test:debug": "jest --verbose",
+    "postbuild": "next-sitemap",
+    "analyze": "cross-env ANALYZE=true next build",
+    "lighthouse": "lighthouse https://ansyar-world.top --output html --output-path ./lighthouse-report.html",
+    "seo:check": "npm run lighthouse && echo 'SEO report generated'",
+    "validate:html": "html-validate public/**/*.html || echo 'HTML validation complete'"
   },
   "dependencies": {
     "@prisma/client": "^6.8.2",

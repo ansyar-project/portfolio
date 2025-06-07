@@ -18,7 +18,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   } catch (error) {
     console.error("Error fetching profile for sitemap:", error);
   }
-
   // Static routes
   const staticRoutes: MetadataRoute.Sitemap = [
     {
@@ -29,7 +28,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${baseUrl}/login`,
-      lastModified: new Date(),
+      lastModified: new Date("2024-01-01"), // Static date for admin routes
       changeFrequency: "yearly",
       priority: 0.1,
     },

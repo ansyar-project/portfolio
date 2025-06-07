@@ -20,6 +20,7 @@ import LazySection from "@/components/LazySection";
 import AnimatedSection from "@/components/AnimatedSection";
 import StaggeredGrid from "@/components/StaggeredGrid";
 import FilteredProjectsSection from "@/components/FilteredProjectsSection";
+import StructuredData from "@/components/StructuredData";
 
 // Aceternity UI Components
 import { TypewriterEffectSmooth } from "@/components/ui/TypewriterEffect";
@@ -184,6 +185,13 @@ export default async function Home() {
 
   return (
     <ErrorBoundary>
+      {/* SEO Structured Data */}
+      <StructuredData
+        profile={profile ?? undefined}
+        projects={projects}
+        skills={skills}
+      />
+
       {/* Enhanced Floating Navigation */}
       <FloatingNav navItems={navItems} />
 
@@ -214,7 +222,7 @@ export default async function Home() {
       )}
 
       {/* Revolutionary Hero Section */}
-      <section id="home" className="relative">
+      <section id="home" className="relative" aria-label="Hero section">
         <div className="min-h-screen w-full flex items-center justify-center bg-black/[0.96] antialiased bg-grid-white/[0.02] relative overflow-hidden">
           <Spotlight
             className="absolute -top-40 left-0 md:left-60 md:-top-20"
@@ -232,7 +240,7 @@ export default async function Home() {
                       <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-75 blur-lg group-hover:opacity-100 transition-opacity duration-300" />
                       <Image
                         src={profile.image}
-                        alt={profile.name}
+                        alt={`${profile.name} - Full Stack Developer Portrait`}
                         width={200}
                         height={200}
                         className="relative w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full object-cover border-4 border-white/20 shadow-2xl"
@@ -355,7 +363,10 @@ export default async function Home() {
             <div className="h-screen bg-gradient-to-b from-black to-neutral-900" />
           }
         >
-          <section className="relative min-h-screen flex items-center bg-white dark:bg-black">
+          <section
+            className="relative min-h-screen flex items-center bg-white dark:bg-black"
+            aria-label="About me section"
+          >
             {/* Background Effects */}
             <div className="absolute inset-0 overflow-hidden">
               <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl animate-pulse" />
@@ -660,7 +671,11 @@ export default async function Home() {
           rootMargin="600px"
         >
           <ErrorBoundary>
-            <section className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen overflow-hidden">
+            <section
+              className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen overflow-hidden"
+              aria-label="Skills and expertise section"
+              role="region"
+            >
               <div className="relative z-10">
                 {/* Section Header */}
                 <AnimatedSection
@@ -750,7 +765,11 @@ export default async function Home() {
           rootMargin="500px"
         >
           <ErrorBoundary>
-            <section className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen">
+            <section
+              className="relative py-20 bg-gradient-to-b from-black via-neutral-900 to-black min-h-screen"
+              aria-label="Featured projects showcase"
+              role="region"
+            >
               <div className="max-w-7xl mx-auto px-6">
                 <AnimatedSection
                   animation="slideUp"
