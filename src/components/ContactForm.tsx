@@ -22,11 +22,11 @@ export default function ContactForm() {
       }
     });
   }
-
   return (
     <form
       action={handleSubmit}
       className="max-w-lg mx-auto bg-white dark:bg-gray-900 rounded-xl shadow p-6 flex flex-col gap-4"
+      aria-label="Contact form"
     >
       <h2 className="text-2xl font-bold mb-2 text-blue-700 dark:text-blue-300">
         Contact Me

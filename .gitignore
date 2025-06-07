@@ -110,3 +110,5 @@ temp/
 
 # Local Netlify folder
 .netlify
+debug*.js
+.unimportedrc.json

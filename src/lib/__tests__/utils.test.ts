@@ -7,7 +7,6 @@ import {
   transformPortfolioItems,
   loadPortfolioData,
 } from "../utils";
-import type { Profile, Project, PortfolioItem } from "@/lib/types";
 
 // Mock the actions module
 jest.mock("@/lib/actions", () => ({
@@ -321,7 +320,7 @@ describe("Utils", () => {
   });
 
   describe("loadPortfolioData", () => {
-    let mockActions: any;
+    let mockActions: typeof import("@/lib/actions");
 
     beforeEach(async () => {
       // Clear the module cache and re-import to get fresh mocks

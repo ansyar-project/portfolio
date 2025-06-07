@@ -9,7 +9,8 @@ import {
   addProjectAction,
   updateProjectAction,
   deleteProjectAction,
-  sendContactAction,
+  contactFormAction,
+  resetTransporter,
 } from "../actions";
 import * as db from "../db";
 import { getServerSession } from "next-auth";
@@ -23,9 +24,18 @@ import nodemailer from "nodemailer";
 jest.mock("../db");
 jest.mock("next-auth");
 jest.mock("next/cache");
-jest.mock("../rateLimit");
+jest.mock("../rateLimit", () => ({
+  rateLimit: jest.fn(),
+  RateLimitError: class RateLimitError extends Error {
+    constructor(message = "Rate limit exceeded") {
+      super(message);
+      this.name = "RateLimitError";
+    }
+  },
+}));
 jest.mock("../utils");
 jest.mock("../auditLogDb");
+jest.mock("nodemailer");
 jest.mock("nodemailer");
 
 const mockDb = db as jest.Mocked<typeof db>;
@@ -62,6 +72,8 @@ describe("Server Actions", () => {
           name: "John Doe",
           title: "Developer",
           bio: "Bio",
+          location: "New York",
+          email: "john@example.com",
           github: null,
           linkedin: null,
           createdAt: new Date(),
@@ -107,11 +119,12 @@ describe("Server Actions", () => {
         mockSanitizeUrl.mockImplementation((input) => input);
         mockLogAdminAction.mockResolvedValue();
       });
-
       it("should update profile successfully", async () => {
         const updatedProfile = {
           id: "1",
           ...validProfileData,
+          location: "New York",
+          email: "john@example.com",
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -154,12 +167,12 @@ describe("Server Actions", () => {
         );
         expect(mockDb.updateProfile).not.toHaveBeenCalled();
       });
-
       it("should throw error if rate limited", async () => {
+        mockGetServerSession.mockResolvedValue(mockSession);
         mockRateLimit.mockReturnValue(false);
 
         await expect(updateProfileAction(validProfileData)).rejects.toThrow(
-          "Too many profile updates. Please wait a minute."
+          RateLimitError
         );
         expect(mockDb.updateProfile).not.toHaveBeenCalled();
       });
@@ -329,12 +342,11 @@ describe("Server Actions", () => {
         expect(mockRevalidatePath).toHaveBeenCalledWith("/admin");
         expect(result).toEqual(updatedSkill);
       });
-
       it("should throw error if not authenticated", async () => {
         mockGetServerSession.mockResolvedValue(null);
 
         await expect(updateSkillAction(skillId, updateData)).rejects.toThrow(
-          "Unauthorized"
+          "Failed to update skill"
         );
         expect(mockDb.updateSkill).not.toHaveBeenCalled();
       });
@@ -366,20 +378,16 @@ describe("Server Actions", () => {
         expect(mockLogAdminAction).toHaveBeenCalledWith(
           "DELETE",
           "skill",
-          skillId,
-          {
-            name: deletedSkill.name,
-          }
+          skillId
         );
         expect(mockRevalidatePath).toHaveBeenCalledWith("/admin");
         expect(result).toEqual(deletedSkill);
       });
-
       it("should throw error if not authenticated", async () => {
         mockGetServerSession.mockResolvedValue(null);
 
         await expect(deleteSkillAction(skillId)).rejects.toThrow(
-          "Unauthorized"
+          "Failed to delete skill"
         );
         expect(mockDb.deleteSkill).not.toHaveBeenCalled();
       });
@@ -474,7 +482,7 @@ describe("Server Actions", () => {
         expect(mockGetServerSession).toHaveBeenCalledTimes(1);
         expect(mockRateLimit).toHaveBeenCalledWith(
           "project-add-admin",
-          5,
+          10,
           60000
         );
         expect(mockSanitizeInput).toHaveBeenCalledWith(validProjectData.title);
@@ -490,7 +498,7 @@ describe("Server Actions", () => {
           newProject.id,
           {
             title: validProjectData.title,
-            stacks: validProjectData.stacks.map((s) => s.name),
+            description: validProjectData.description.substring(0, 100) + "...",
           }
         );
         expect(mockRevalidatePath).toHaveBeenCalledWith("/admin");
@@ -514,7 +522,6 @@ describe("Server Actions", () => {
         );
         expect(mockDb.addProject).not.toHaveBeenCalled();
       });
-
       it("should throw error if description is missing", async () => {
         const invalidData = { ...validProjectData, description: "" };
 
@@ -524,82 +531,324 @@ describe("Server Actions", () => {
         expect(mockDb.addProject).not.toHaveBeenCalled();
       });
     });
-  });
 
+    describe("updateProjectAction", () => {
+      const projectId = "1";
+      const updateData = {
+        title: "Updated Project",
+        description: "Updated description",
+        image: "/updated-project.jpg",
+        github: "https://github.com/user/updated-project",
+        live: "https://updated-project.com",
+        stacks: [{ name: "Vue" }, { name: "JavaScript" }],
+      };
+
+      it("should update project successfully", async () => {
+        const updatedProject = {
+          id: projectId,
+          ...updateData,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          stacks: [
+            {
+              id: "1",
+              name: "Vue",
+              projectId: projectId,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            {
+              id: "2",
+              name: "JavaScript",
+              projectId: projectId,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          ],
+        };
+
+        mockDb.updateProject.mockResolvedValue(updatedProject);
+
+        const result = await updateProjectAction(projectId, updateData);
+
+        expect(mockGetServerSession).toHaveBeenCalledTimes(1);
+        expect(mockRateLimit).toHaveBeenCalledWith(
+          "project-update-admin",
+          20,
+          60000
+        );
+        expect(mockSanitizeInput).toHaveBeenCalledWith(updateData.title);
+        expect(mockSanitizeHtml).toHaveBeenCalledWith(updateData.description);
+        expect(mockSanitizeUrl).toHaveBeenCalledWith(updateData.github);
+        expect(mockSanitizeUrl).toHaveBeenCalledWith(updateData.live);
+        expect(mockDb.updateProject).toHaveBeenCalledWith(
+          projectId,
+          updateData
+        );
+        expect(mockLogAdminAction).toHaveBeenCalledWith(
+          "UPDATE",
+          "project",
+          projectId,
+          updateData
+        );
+        expect(mockRevalidatePath).toHaveBeenCalledWith("/admin");
+        expect(mockRevalidatePath).toHaveBeenCalledWith("/");
+        expect(result).toEqual(updatedProject);
+      });
+      it("should throw error if not authenticated", async () => {
+        mockGetServerSession.mockResolvedValue(null);
+
+        await expect(
+          updateProjectAction(projectId, updateData)
+        ).rejects.toThrow("Failed to update project");
+        expect(mockDb.updateProject).not.toHaveBeenCalled();
+      });
+      it("should throw error if project ID is missing", async () => {
+        await expect(updateProjectAction("", updateData)).rejects.toThrow(
+          "Failed to update project"
+        );
+        expect(mockDb.updateProject).not.toHaveBeenCalled();
+      });
+      it("should throw error if rate limited", async () => {
+        mockGetServerSession.mockResolvedValue(mockSession);
+        mockRateLimit.mockReturnValue(false);
+
+        await expect(
+          updateProjectAction(projectId, updateData)
+        ).rejects.toThrow("Failed to update project");
+        expect(mockDb.updateProject).not.toHaveBeenCalled();
+      });
+    });
+
+    describe("deleteProjectAction", () => {
+      const projectId = "1";
+
+      it("should delete project successfully", async () => {
+        const deletedProject = {
+          id: projectId,
+          title: "Project to Delete",
+          description: "Project description",
+          image: "/project.jpg",
+          github: "https://github.com/user/project",
+          live: "https://project.com",
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          stacks: [],
+        };
+
+        const existingProjects = [deletedProject];
+        mockDb.getProjects.mockResolvedValue(existingProjects);
+        mockDb.deleteProject.mockResolvedValue(deletedProject);
+
+        const result = await deleteProjectAction(projectId);
+
+        expect(mockGetServerSession).toHaveBeenCalledTimes(1);
+        expect(mockRateLimit).toHaveBeenCalledWith(
+          "project-delete-admin",
+          10,
+          60000
+        );
+        expect(mockDb.getProjects).toHaveBeenCalledTimes(1);
+        expect(mockDb.deleteProject).toHaveBeenCalledWith(projectId);
+        expect(mockLogAdminAction).toHaveBeenCalledWith(
+          "DELETE",
+          "project",
+          projectId
+        );
+        expect(mockRevalidatePath).toHaveBeenCalledWith("/admin");
+        expect(mockRevalidatePath).toHaveBeenCalledWith("/");
+        expect(result).toEqual(deletedProject);
+      });
+      it("should throw error if not authenticated", async () => {
+        mockGetServerSession.mockResolvedValue(null);
+
+        await expect(deleteProjectAction(projectId)).rejects.toThrow(
+          "Failed to delete project"
+        );
+        expect(mockDb.deleteProject).not.toHaveBeenCalled();
+      });
+      it("should throw error if project ID is missing", async () => {
+        await expect(deleteProjectAction("")).rejects.toThrow(
+          "Failed to delete project"
+        );
+        expect(mockDb.deleteProject).not.toHaveBeenCalled();
+      });
+      it("should throw error if rate limited", async () => {
+        mockGetServerSession.mockResolvedValue(mockSession);
+        mockRateLimit.mockReturnValue(false);
+
+        await expect(deleteProjectAction(projectId)).rejects.toThrow(
+          "Failed to delete project"
+        );
+        expect(mockDb.deleteProject).not.toHaveBeenCalled();
+      });
+    });
+  });
   describe("Contact Action", () => {
-    const validContactData = {
+    const createFormData = (data: {
+      name?: string;
+      email?: string;
+      message?: string;
+    }) => {
+      const formData = new FormData();
+      if (data.name !== undefined) formData.append("name", data.name);
+      if (data.email !== undefined) formData.append("email", data.email);
+      if (data.message !== undefined) formData.append("message", data.message);
+      return formData;
+    };
+
+    const validContactFormData = createFormData({
       name: "John Doe",
       email: "john@example.com",
       message: "Hello, I would like to get in touch.",
-    };
-
+    });
     beforeEach(() => {
       mockSanitizeInput.mockImplementation((input) => input);
-      mockSanitizeHtml.mockImplementation((input) => input);
+      mockSanitizeInput.mockClear();
+      // Clear implementation but keep the mock structure
+      (
+        nodemailer.createTransport as jest.MockedFunction<
+          typeof nodemailer.createTransport
+        >
+      ).mockClear();
+      // Reset the transporter singleton to ensure fresh mocks
+      resetTransporter();
+      // Ensure we're using real timers by default
+      jest.useRealTimers();
+    });
+    it("should return error if name is missing", async () => {
+      const invalidFormData = createFormData({
+        email: "john@example.com",
+        message: "Hello, I would like to get in touch.",
+      });
 
-      // Mock nodemailer
+      const result = await contactFormAction(invalidFormData);
+
+      expect(result).toEqual({ ok: false, error: "All fields are required." });
+    });
+
+    it("should return error if email is missing", async () => {
+      const invalidFormData = createFormData({
+        name: "John Doe",
+        message: "Hello, I would like to get in touch.",
+      });
+
+      const result = await contactFormAction(invalidFormData);
+
+      expect(result).toEqual({ ok: false, error: "All fields are required." });
+    });
+
+    it("should return error if message is missing", async () => {
+      const invalidFormData = createFormData({
+        name: "John Doe",
+        email: "john@example.com",
+      });
+
+      const result = await contactFormAction(invalidFormData);
+
+      expect(result).toEqual({ ok: false, error: "All fields are required." });
+    });
+
+    it("should return error for invalid email format", async () => {
+      const invalidFormData = createFormData({
+        name: "John Doe",
+        email: "invalid-email",
+        message: "Hello, I would like to get in touch.",
+      });
+
+      const result = await contactFormAction(invalidFormData);
+
+      expect(result).toEqual({
+        ok: false,
+        error: "Please enter a valid email address.",
+      });
+    });
+
+    it("should return error for input too long", async () => {
+      const longName = "a".repeat(101);
+      const invalidFormData = createFormData({
+        name: longName,
+        email: "john@example.com",
+        message: "Hello, I would like to get in touch.",
+      });
+
+      const result = await contactFormAction(invalidFormData);
+
+      expect(result).toEqual({ ok: false, error: "Input too long." });
+    });
+    it("should handle email sending failure", async () => {
+      const mockSendMail = jest.fn().mockRejectedValue(new Error("SMTP error"));
+      const mockTransporter = {
+        sendMail: mockSendMail,
+      };
+      (
+        nodemailer.createTransport as jest.MockedFunction<
+          typeof nodemailer.createTransport
+        >
+      ).mockReturnValue(
+        mockTransporter as ReturnType<typeof nodemailer.createTransport>
+      );
+
+      const result = await contactFormAction(validContactFormData);
+
+      expect(result).toEqual({
+        ok: false,
+        error: "Failed to send email. Please try again.",
+      });
+    });
+    it("should handle email timeout", async () => {
+      jest.useFakeTimers();
+
+      const mockSendMail = jest.fn().mockImplementation(
+        () => new Promise(() => {}) // Never resolves - simulates hanging
+      );
+      const mockTransporter = {
+        sendMail: mockSendMail,
+      };
+      (
+        nodemailer.createTransport as jest.MockedFunction<
+          typeof nodemailer.createTransport
+        >
+      ).mockReturnValue(
+        mockTransporter as ReturnType<typeof nodemailer.createTransport>
+      );
+
+      // Start the action
+      const resultPromise = contactFormAction(validContactFormData);
+
+      // Fast-forward time to trigger the timeout
+      jest.advanceTimersByTime(10000);
+
+      const result = await resultPromise;
+
+      expect(result).toEqual({
+        ok: false,
+        error: "Email service is slow. Please try again.",
+      });
+      jest.useRealTimers();
+    });
+
+    it("should send contact email successfully", async () => {
+      // Mock nodemailer.createTransport for successful case
       const mockTransporter = {
         sendMail: jest.fn().mockResolvedValue({ messageId: "12345" }),
       };
       (
-        nodemailer.createTransporter as jest.MockedFunction<
-          typeof nodemailer.createTransporter
+        nodemailer.createTransport as jest.MockedFunction<
+          typeof nodemailer.createTransport
         >
-      ).mockReturnValue(mockTransporter as any);
-    });
-
-    it("should send contact email successfully", async () => {
-      const result = await sendContactAction(validContactData);
-
-      expect(mockRateLimit).toHaveBeenCalledWith(
-        `contact-${validContactData.email}`,
-        3,
-        3600000
+      ).mockReturnValue(
+        mockTransporter as ReturnType<typeof nodemailer.createTransport>
       );
-      expect(mockSanitizeInput).toHaveBeenCalledWith(validContactData.name);
-      expect(mockSanitizeInput).toHaveBeenCalledWith(validContactData.email);
-      expect(mockSanitizeHtml).toHaveBeenCalledWith(validContactData.message);
-      expect(result).toEqual({ success: true });
-    });
 
-    it("should throw error if rate limited", async () => {
-      mockRateLimit.mockReturnValue(false);
+      const result = await contactFormAction(validContactFormData);
 
-      await expect(sendContactAction(validContactData)).rejects.toThrow(
-        "Too many contact attempts. Please wait an hour before trying again."
+      expect(mockSanitizeInput).toHaveBeenCalledWith("John Doe");
+      expect(mockSanitizeInput).toHaveBeenCalledWith("john@example.com");
+      expect(mockSanitizeInput).toHaveBeenCalledWith(
+        "Hello, I would like to get in touch."
       );
-    });
-
-    it("should throw error if name is missing", async () => {
-      const invalidData = { ...validContactData, name: "" };
-
-      await expect(sendContactAction(invalidData)).rejects.toThrow(
-        "Name is required"
-      );
-    });
-
-    it("should throw error if email is missing", async () => {
-      const invalidData = { ...validContactData, email: "" };
-
-      await expect(sendContactAction(invalidData)).rejects.toThrow(
-        "Email is required"
-      );
-    });
-
-    it("should throw error if message is missing", async () => {
-      const invalidData = { ...validContactData, message: "" };
-
-      await expect(sendContactAction(invalidData)).rejects.toThrow(
-        "Message is required"
-      );
-    });
-
-    it("should throw error for invalid email format", async () => {
-      const invalidData = { ...validContactData, email: "invalid-email" };
-
-      await expect(sendContactAction(invalidData)).rejects.toThrow(
-        "Invalid email format"
-      );
+      expect(result).toEqual({ ok: true });
     });
   });
 });

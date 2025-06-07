@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useOptimistic } from "react";
+import React, { useState, useOptimistic, startTransition } from "react";
 import type { Skill } from "@/lib/types";
 import {
   addSkillAction,
@@ -79,7 +79,13 @@ export default function SkillForm({ skills }: SkillFormProps) {
     try {
       if (editingId) {
         // Optimistic update
-        updateOptimisticSkills({ type: "update", id: editingId, skill: form });
+        startTransition(() => {
+          updateOptimisticSkills({
+            type: "update",
+            id: editingId,
+            skill: form,
+          });
+        });
 
         await updateSkillAction(editingId, form);
         setSuccess("Skill updated successfully!");
@@ -90,7 +96,9 @@ export default function SkillForm({ skills }: SkillFormProps) {
           name: form.name,
           level: form.level,
         };
-        updateOptimisticSkills({ type: "add", skill: tempSkill });
+        startTransition(() => {
+          updateOptimisticSkills({ type: "add", skill: tempSkill });
+        });
 
         await addSkillAction(form);
         setSuccess("Skill added successfully!");
@@ -102,7 +110,9 @@ export default function SkillForm({ skills }: SkillFormProps) {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       // Revert optimistic updates on error
-      updateOptimisticSkills({ type: "revert", skills: previousSkills });
+      startTransition(() => {
+        updateOptimisticSkills({ type: "revert", skills: previousSkills });
+      });
       setError(err instanceof Error ? err.message : "Failed to save skill.");
     } finally {
       setLoading(false);
@@ -119,10 +129,11 @@ export default function SkillForm({ skills }: SkillFormProps) {
 
     // Store current state for potential revert
     const previousSkills = optimisticSkills;
-
     try {
       // Optimistic delete
-      updateOptimisticSkills({ type: "delete", id });
+      startTransition(() => {
+        updateOptimisticSkills({ type: "delete", id });
+      });
 
       await deleteSkillAction(id);
       setSuccess("Skill deleted successfully!");
@@ -131,7 +142,9 @@ export default function SkillForm({ skills }: SkillFormProps) {
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       // Revert optimistic updates on error
-      updateOptimisticSkills({ type: "revert", skills: previousSkills });
+      startTransition(() => {
+        updateOptimisticSkills({ type: "revert", skills: previousSkills });
+      });
       setError(err instanceof Error ? err.message : "Failed to delete skill.");
     } finally {
       setLoading(false);

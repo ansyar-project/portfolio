@@ -4,9 +4,9 @@ import type { Profile, Skill, Project, PortfolioItem } from "@/lib/types";
 export const mockProfile: Profile = {
   name: "John Doe",
   title: "Full Stack Developer",
-  bio: "Passionate full-stack developer with expertise in modern web technologies. I love creating scalable applications and solving complex problems.",
-  github: "https://github.com/johndoe",
-  linkedin: "https://linkedin.com/in/johndoe"
+  bio: "Passionate developer with 5+ years of experience in web development.",
+  github: "johndoe",
+  linkedin: "john-doe",
 };
 
 // Mock Skills Data

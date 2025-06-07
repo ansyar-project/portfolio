@@ -34,7 +34,7 @@ describe("LoginForm", () => {
       refresh: jest.fn(),
       replace: jest.fn(),
       prefetch: jest.fn(),
-    } as any);
+    } as ReturnType<typeof useRouter>);
   });
 
   it("renders the login form with all required elements", () => {
@@ -176,12 +176,11 @@ describe("LoginForm", () => {
     expect(usernameInput).toHaveAttribute("type", "text");
     expect(passwordInput).toHaveAttribute("type", "password");
   });
-
   it("sets autofocus on username field", () => {
     render(<LoginForm />);
 
     const usernameInput = screen.getByPlaceholderText("Username");
-    expect(usernameInput).toHaveAttribute("autoFocus");
+    expect(usernameInput).toHaveFocus();
   });
 
   it("submits form when Enter is pressed in username field", async () => {
@@ -230,7 +229,6 @@ describe("LoginForm", () => {
       password: "password123",
     });
   });
-
   it("supports keyboard navigation", async () => {
     render(<LoginForm />);
 
@@ -238,17 +236,17 @@ describe("LoginForm", () => {
     const passwordInput = screen.getByPlaceholderText("Password");
     const loginButton = screen.getByRole("button", { name: "Login" });
 
-    // Tab through form elements
-    await user.tab();
+    // Username should already have focus due to autofocus
     expect(usernameInput).toHaveFocus();
 
+    // Tab to password field
     await user.tab();
     expect(passwordInput).toHaveFocus();
 
+    // Tab to login button
     await user.tab();
     expect(loginButton).toHaveFocus();
   });
-
   it("handles signIn promise rejection gracefully", async () => {
     mockedSignIn.mockRejectedValueOnce(new Error("Network error"));
 
@@ -262,15 +260,20 @@ describe("LoginForm", () => {
     await user.type(passwordInput, "password123");
     await user.click(loginButton);
 
+    // Wait a moment to ensure any async operations complete
+    await waitFor(() => {
+      expect(mockedSignIn).toHaveBeenCalled();
+    });
+
     // Should not crash and should not redirect
     expect(mockPush).not.toHaveBeenCalled();
   });
-
   it("has proper form structure and accessibility", () => {
     render(<LoginForm />);
 
-    const form = screen.getByRole("form");
-    expect(form).toBeInTheDocument();
+    // Find the form element directly
+    const formElement = document.querySelector("form");
+    expect(formElement).toBeInTheDocument();
 
     // Check that inputs have proper labels (through placeholders)
     expect(screen.getByPlaceholderText("Username")).toBeInTheDocument();

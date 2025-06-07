@@ -36,9 +36,8 @@ export default function ProfileForm({ profile }: { profile: Profile | null }) {
       setLoading(false);
     }
   };
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-xl" role="form">
       <div>
         <label className="block font-medium mb-1" htmlFor="name">
           Name

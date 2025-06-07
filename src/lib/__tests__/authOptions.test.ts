@@ -1,11 +1,25 @@
-import { authOptions } from "../authOptions";
-import CredentialsProvider from "next-auth/providers/credentials";
+import type { CredentialsConfig } from "next-auth/providers/credentials";
+import type { NextAuthOptions } from "next-auth";
+
+type MockRequest = {
+  body?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  headers?: Record<string, unknown>;
+  method?: string;
+};
 
 describe("Auth Options", () => {
-  beforeEach(() => {
+  let authOptions: NextAuthOptions;
+
+  beforeEach(async () => {
     // Set up environment variables for testing
     process.env.ADMIN_USERNAME = "testadmin";
     process.env.ADMIN_PASSWORD = "testpassword123";
+
+    // Clear module cache and import fresh
+    delete require.cache[require.resolve("../authOptions")];
+    const authModule = await import("../authOptions");
+    authOptions = authModule.authOptions;
   });
 
   afterEach(() => {
@@ -31,51 +45,50 @@ describe("Auth Options", () => {
   });
 
   describe("Credentials Provider Authorization", () => {
-    let authorize: any;
+    let authorize: NonNullable<CredentialsConfig["authorize"]>;
 
     beforeEach(() => {
-      const credentialsProvider = authOptions.providers[0] as any;
-      authorize = credentialsProvider.authorize;
+      const credentialsProvider = authOptions.providers[0] as CredentialsConfig;
+      // Use the authorize function from options instead of the direct one
+      authorize =
+        credentialsProvider.options?.authorize ||
+        credentialsProvider.authorize!;
     });
-
     it("should authorize valid credentials", async () => {
       const credentials = {
         username: "testadmin",
         password: "testpassword123",
       };
 
-      const result = await authorize(credentials);
+      const result = await authorize(credentials, {} as MockRequest);
 
       expect(result).toEqual({
         id: "1",
         name: "testadmin",
       });
     });
-
     it("should reject invalid username", async () => {
       const credentials = {
         username: "wronguser",
         password: "testpassword123",
       };
 
-      const result = await authorize(credentials);
+      const result = await authorize(credentials, {} as MockRequest);
 
       expect(result).toBeNull();
     });
-
     it("should reject invalid password", async () => {
       const credentials = {
         username: "testadmin",
         password: "wrongpassword",
       };
 
-      const result = await authorize(credentials);
+      const result = await authorize(credentials, {} as MockRequest);
 
       expect(result).toBeNull();
     });
-
     it("should reject missing credentials", async () => {
-      const result = await authorize(undefined);
+      const result = await authorize(undefined, {} as MockRequest);
 
       expect(result).toBeNull();
     });
@@ -88,25 +101,28 @@ describe("Auth Options", () => {
       const credentialsOnlyPassword = {
         password: "testpassword123",
       };
-
-      const result1 = await authorize(credentialsOnlyUsername);
-      const result2 = await authorize(credentialsOnlyPassword);
+      const result1 = await authorize(
+        credentialsOnlyUsername,
+        {} as MockRequest
+      );
+      const result2 = await authorize(
+        credentialsOnlyPassword,
+        {} as MockRequest
+      );
 
       expect(result1).toBeNull();
       expect(result2).toBeNull();
     });
-
     it("should reject empty credentials", async () => {
       const credentials = {
         username: "",
         password: "",
       };
 
-      const result = await authorize(credentials);
+      const result = await authorize(credentials, {} as MockRequest);
 
       expect(result).toBeNull();
     });
-
     it("should handle missing environment variables", async () => {
       delete process.env.ADMIN_USERNAME;
       delete process.env.ADMIN_PASSWORD;
@@ -116,44 +132,40 @@ describe("Auth Options", () => {
         password: "testpassword123",
       };
 
-      const result = await authorize(credentials);
+      const result = await authorize(credentials, {} as MockRequest);
 
       expect(result).toBeNull();
     });
-
     it("should be case sensitive for username", async () => {
       const credentials = {
         username: "TESTADMIN",
         password: "testpassword123",
       };
 
-      const result = await authorize(credentials);
+      const result = await authorize(credentials, {} as MockRequest);
 
       expect(result).toBeNull();
     });
-
     it("should be case sensitive for password", async () => {
       const credentials = {
         username: "testadmin",
         password: "TESTPASSWORD123",
       };
 
-      const result = await authorize(credentials);
+      const result = await authorize(credentials, {} as MockRequest);
 
       expect(result).toBeNull();
     });
-
     it("should handle whitespace in credentials", async () => {
       const credentials = {
         username: " testadmin ",
         password: " testpassword123 ",
       };
 
-      const result = await authorize(credentials);
+      const result = await authorize(credentials, {} as MockRequest);
 
       expect(result).toBeNull();
     });
-
     it("should handle special characters in environment variables", async () => {
       process.env.ADMIN_USERNAME = "admin@domain.com";
       process.env.ADMIN_PASSWORD = "p@ssw0rd!#$%";
@@ -163,7 +175,7 @@ describe("Auth Options", () => {
         password: "p@ssw0rd!#$%",
       };
 
-      const result = await authorize(credentials);
+      const result = await authorize(credentials, {} as MockRequest);
 
       expect(result).toEqual({
         id: "1",
@@ -174,8 +186,10 @@ describe("Auth Options", () => {
 
   describe("Credentials Configuration", () => {
     it("should have correct credential fields", () => {
-      const credentialsProvider = authOptions.providers[0] as any;
-      const credentials = credentialsProvider.credentials;
+      const credentialsProvider = authOptions.providers[0] as CredentialsConfig;
+      const credentials =
+        credentialsProvider.options?.credentials ||
+        credentialsProvider.credentials;
 
       expect(credentials).toHaveProperty("username");
       expect(credentials).toHaveProperty("password");
@@ -204,11 +218,11 @@ describe("Auth Options", () => {
     });
 
     it("should use JWT strategy for sessions", () => {
-      expect(authOptions.session.strategy).toBe("jwt");
+      expect(authOptions.session!.strategy).toBe("jwt");
     });
 
     it("should redirect to custom login page", () => {
-      expect(authOptions.pages.signIn).toBe("/login");
+      expect(authOptions.pages!.signIn).toBe("/login");
     });
   });
 });

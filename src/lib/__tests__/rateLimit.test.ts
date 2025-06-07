@@ -1,17 +1,30 @@
-import { rateLimit, RateLimitError } from "../rateLimit";
+import {
+  rateLimit,
+  RateLimitError,
+  clearRateLimit,
+  setTimeFunction,
+  resetTimeFunction,
+} from "../rateLimit";
 
-// Mock Date.now for predictable testing
-const mockDateNow = jest.spyOn(Date, "now");
+// Mock time for predictable testing
+let mockTime = 1000;
+
+const getMockTime = () => mockTime;
+const setMockTime = (time: number) => {
+  mockTime = time;
+};
+
 
 describe("Rate Limiting", () => {
   beforeEach(() => {
-    // Clear the rate limit map by creating a fresh module
-    jest.resetModules();
-    mockDateNow.mockReturnValue(1000); // Start at 1000ms
+    // Clear the rate limit map and set up time mocking
+    clearRateLimit();
+    mockTime = 1000; // Start at 1000ms
+    setTimeFunction(getMockTime);
   });
 
   afterEach(() => {
-    mockDateNow.mockRestore();
+    resetTimeFunction();
   });
 
   describe("rateLimit", () => {
@@ -47,10 +60,8 @@ describe("Rate Limiting", () => {
       // Use up the limit
       expect(rateLimit(identifier, limit, windowMs)).toBe(true);
       expect(rateLimit(identifier, limit, windowMs)).toBe(true);
-      expect(rateLimit(identifier, limit, windowMs)).toBe(false);
-
-      // Move time forward past the window
-      mockDateNow.mockReturnValue(1000 + windowMs + 1);
+      expect(rateLimit(identifier, limit, windowMs)).toBe(false); // Move time forward past the window
+      setMockTime(1000 + windowMs + 1);
 
       // Should be allowed again
       expect(rateLimit(identifier, limit, windowMs)).toBe(true);
@@ -82,7 +93,6 @@ describe("Rate Limiting", () => {
       // 11th request should be blocked
       expect(rateLimit(identifier)).toBe(false);
     });
-
     it("should clean up expired entries", () => {
       const limit = 1;
       const windowMs = 60000;
@@ -92,13 +102,11 @@ describe("Rate Limiting", () => {
       expect(rateLimit("user1", limit, windowMs)).toBe(false);
 
       // Create entry for user2
+      expect(rateLimit("user2", limit, windowMs)).toBe(true); // Move time forward to expire user1's entry
+      setMockTime(1000 + windowMs + 1);
+
+      // Make a request with user2 - user2's entry should also be expired and reset
       expect(rateLimit("user2", limit, windowMs)).toBe(true);
-
-      // Move time forward to expire user1's entry
-      mockDateNow.mockReturnValue(1000 + windowMs + 1);
-
-      // Make a request with user2 - this should trigger cleanup
-      expect(rateLimit("user2", limit, windowMs)).toBe(false);
 
       // user1 should be able to make requests again (entry was cleaned up)
       expect(rateLimit("user1", limit, windowMs)).toBe(true);
@@ -115,10 +123,8 @@ describe("Rate Limiting", () => {
 
       expect(rateLimit(identifier, limit, windowMs)).toBe(true);
       expect(rateLimit(identifier, limit, windowMs)).toBe(true);
-      expect(rateLimit(identifier, limit, windowMs)).toBe(false);
-
-      // Move time forward by 2ms
-      mockDateNow.mockReturnValue(1003);
+      expect(rateLimit(identifier, limit, windowMs)).toBe(false); // Move time forward by 2ms
+      setMockTime(1003);
 
       // Should be allowed again
       expect(rateLimit(identifier, limit, windowMs)).toBe(true);
@@ -142,10 +148,8 @@ describe("Rate Limiting", () => {
 
     it("should handle concurrent access to same identifier", () => {
       const identifier = "test-key";
-      const limit = 5;
-
-      // Simulate concurrent requests
-      const results = [];
+      const limit = 5; // Simulate concurrent requests
+      const results: boolean[] = [];
       for (let i = 0; i < 10; i++) {
         results.push(rateLimit(identifier, limit, 60000));
       }
@@ -161,10 +165,8 @@ describe("Rate Limiting", () => {
       const windowMs = 60000;
 
       // First request
-      expect(rateLimit(identifier, limit, windowMs)).toBe(true);
-
-      // Set time exactly to reset time
-      mockDateNow.mockReturnValue(1000 + windowMs);
+      expect(rateLimit(identifier, limit, windowMs)).toBe(true); // Set time exactly to reset time
+      setMockTime(1000 + windowMs);
 
       // Should reset and allow request
       expect(rateLimit(identifier, limit, windowMs)).toBe(true);
@@ -208,10 +210,8 @@ describe("Rate Limiting", () => {
       // Create many different entries
       for (let i = 0; i < 100; i++) {
         rateLimit(`user-${i}`, limit, windowMs);
-      }
-
-      // Move time forward to expire all entries
-      mockDateNow.mockReturnValue(1000 + windowMs + 1);
+      } // Move time forward to expire all entries
+      setMockTime(1000 + windowMs + 1);
 
       // Make a new request which should trigger cleanup
       rateLimit("new-user", limit, windowMs);

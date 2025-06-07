@@ -31,6 +31,11 @@ export function sanitizeHtml(html: string): string {
 export function sanitizeUrl(url: string): string {
   const trimmed = url.trim();
 
+  // Handle empty strings
+  if (trimmed === "") {
+    return "";
+  }
+
   // Remove javascript: and data: protocols
   if (/^(javascript:|data:|vbscript:)/i.test(trimmed)) {
     return "";

@@ -8,19 +8,24 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const router = useRouter();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    const res = await signIn("credentials", {
-      redirect: false,
-      username,
-      password,
-    });
-    if (res?.error) {
-      setError("Invalid credentials");
-    } else {
-      router.push("/admin");
+    try {
+      const res = await signIn("credentials", {
+        redirect: false,
+        username,
+        password,
+      });
+      if (res?.error) {
+        setError("Invalid credentials");
+      } else {
+        router.push("/admin");
+      }
+    } catch (error) {
+      // Handle network errors or other exceptions
+      console.error("Login error:", error);
+      setError("An error occurred. Please try again.");
     }
   };
 

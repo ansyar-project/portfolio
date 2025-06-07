@@ -1,4 +1,102 @@
 import "@testing-library/jest-dom";
+import { TextEncoder, TextDecoder } from "util";
+
+// Polyfills for Node.js environment
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
+// Mock Web APIs for Next.js
+global.Request = class Request {
+  constructor(input, init) {
+    this.url = input;
+    this.method = init?.method || "GET";
+    this.headers = new Headers(init?.headers);
+  }
+};
+
+global.Response = class Response {
+  constructor(body, init) {
+    this.body = body;
+    this.status = init?.status || 200;
+    this.headers = new Headers(init?.headers);
+    this._json = null;
+
+    // If body is provided and it's an object, store it for json() method
+    if (typeof body === "string") {
+      try {
+        this._json = JSON.parse(body);
+      } catch {
+        this._json = body;
+      }
+    } else if (body && typeof body === "object") {
+      this._json = body;
+    }
+  }
+
+  async json() {
+    return this._json;
+  }
+
+  static json(data, init = {}) {
+    const response = new Response(JSON.stringify(data), {
+      ...init,
+      headers: {
+        "content-type": "application/json",
+        ...init.headers,
+      },
+    });
+    response._json = data;
+    return response;
+  }
+};
+
+global.Headers = class Headers {
+  constructor(init) {
+    this.map = new Map();
+    if (init) {
+      if (init instanceof Headers) {
+        // Copy from another Headers instance
+        init.map.forEach((value, key) => {
+          this.map.set(key, value);
+        });
+      } else {
+        // Initialize from object
+        Object.entries(init).forEach(([key, value]) => {
+          this.map.set(key.toLowerCase(), value);
+        });
+      }
+    }
+  }
+  get(name) {
+    return this.map.get(name.toLowerCase());
+  }
+  set(name, value) {
+    this.map.set(name.toLowerCase(), value);
+  }
+  has(name) {
+    return this.map.has(name.toLowerCase());
+  }
+  append(name, value) {
+    this.map.set(name.toLowerCase(), value);
+  }
+  delete(name) {
+    this.map.delete(name.toLowerCase());
+  }
+  forEach(callback) {
+    this.map.forEach(callback);
+  }
+  keys() {
+    return this.map.keys();
+  }
+  values() {
+    return this.map.values();
+  }
+  entries() {
+    return this.map.entries();
+  }
+};
+
+global.fetch = jest.fn();
 
 // Mock Next.js router
 jest.mock("next/router", () => ({
@@ -44,7 +142,12 @@ jest.mock("next/navigation", () => ({
   },
 }));
 
-// Mock next-auth
+// Mock next-auth completely
+jest.mock("next-auth", () => ({
+  getServerSession: jest.fn(),
+}));
+
+// Mock next-auth/react
 jest.mock("next-auth/react", () => ({
   useSession: jest.fn(() => ({ data: null, status: "loading" })),
   signIn: jest.fn(),

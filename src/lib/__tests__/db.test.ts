@@ -392,7 +392,6 @@ describe("Database Functions", () => {
             },
           ],
         };
-
         const mockTx = {
           projectStack: {
             deleteMany: jest.fn(),
@@ -404,7 +403,7 @@ describe("Database Functions", () => {
         };
 
         prismaMock.$transaction.mockImplementation((callback) =>
-          callback(mockTx as any)
+          callback(mockTx as Parameters<typeof callback>[0])
         );
 
         const result = await updateProject(projectId, updateData);
@@ -450,9 +449,8 @@ describe("Database Functions", () => {
             delete: jest.fn().mockResolvedValue(mockDeletedProject),
           },
         };
-
         prismaMock.$transaction.mockImplementation((callback) =>
-          callback(mockTx as any)
+          callback(mockTx as Parameters<typeof callback>[0])
         );
 
         const result = await deleteProject(projectId);

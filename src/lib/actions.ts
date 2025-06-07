@@ -586,6 +586,11 @@ const getTransporter = () => {
   return transporter;
 };
 
+// Function to reset transporter (for testing)
+export const resetTransporter = async () => {
+  transporter = null;
+};
+
 // --- Contact Form Action ---
 export async function contactFormAction(formData: FormData) {
   "use server";
