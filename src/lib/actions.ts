@@ -7,14 +7,17 @@ import {
   addSkill,
   updateSkill,
   deleteSkill,
+  reorderSkills,
   getProjects,
   addProject,
   updateProject,
   deleteProject,
+  reorderProjects,
   getPortfolioItems,
   addPortfolioItem,
   updatePortfolioItem,
   deletePortfolioItem,
+  reorderPortfolioItems,
   getAllUniqueStacks,
 } from "./db";
 import nodemailer from "nodemailer";
@@ -240,6 +243,30 @@ export async function deleteSkillAction(id: string) {
   }
 }
 
+export async function reorderSkillsAction(orderedIds: string[]) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!rateLimit(`skill-reorder-${session.user?.name}`, 10, 60000)) {
+      throw new RateLimitError(
+        "Too many reorder requests. Please wait a minute."
+      );
+    }
+
+    await reorderSkills(orderedIds);
+    await logAdminAction("UPDATE", "skill", undefined, { action: "reorder" });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+  } catch (error) {
+    console.error("Failed to reorder skills:", error);
+    throw new Error("Failed to reorder skills");
+  }
+}
+
 // --- Project Actions ---
 export async function getProjectsAction() {
   try {
@@ -391,6 +418,30 @@ export async function deleteProjectAction(id: string) {
   } catch (error) {
     console.error("Failed to delete project:", error);
     throw new Error("Failed to delete project");
+  }
+}
+
+export async function reorderProjectsAction(orderedIds: string[]) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!rateLimit(`project-reorder-${session.user?.name}`, 10, 60000)) {
+      throw new RateLimitError(
+        "Too many reorder requests. Please wait a minute."
+      );
+    }
+
+    await reorderProjects(orderedIds);
+    await logAdminAction("UPDATE", "project", undefined, { action: "reorder" });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+  } catch (error) {
+    console.error("Failed to reorder projects:", error);
+    throw new Error("Failed to reorder projects");
   }
 }
 
@@ -555,6 +606,32 @@ export async function deletePortfolioItemAction(id: string) {
   } catch (error) {
     console.error("Failed to delete portfolio item:", error);
     throw new Error("Failed to delete portfolio item");
+  }
+}
+
+export async function reorderPortfolioItemsAction(orderedIds: string[]) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!rateLimit(`portfolio-reorder-${session.user?.name}`, 10, 60000)) {
+      throw new RateLimitError(
+        "Too many reorder requests. Please wait a minute."
+      );
+    }
+
+    await reorderPortfolioItems(orderedIds);
+    await logAdminAction("UPDATE", "portfolio_item", undefined, {
+      action: "reorder",
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/");
+  } catch (error) {
+    console.error("Failed to reorder portfolio items:", error);
+    throw new Error("Failed to reorder portfolio items");
   }
 }
 

@@ -18,7 +18,18 @@ export async function updateProfile(
 
 // --- Skills ---
 export async function getSkills() {
-  return prisma.skill.findMany();
+  return prisma.skill.findMany({ orderBy: { displayOrder: "asc" } });
+}
+
+export async function reorderSkills(orderedIds: string[]) {
+  return prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.skill.update({
+        where: { id },
+        data: { displayOrder: index },
+      })
+    )
+  );
 }
 
 export async function addSkill(data: { name: string; level: string }) {
@@ -38,7 +49,21 @@ export async function deleteSkill(id: string) {
 
 // --- Projects ---
 export async function getProjects() {
-  return prisma.project.findMany({ include: { stacks: true } });
+  return prisma.project.findMany({
+    include: { stacks: true },
+    orderBy: { displayOrder: "asc" },
+  });
+}
+
+export async function reorderProjects(orderedIds: string[]) {
+  return prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.project.update({
+        where: { id },
+        data: { displayOrder: index },
+      })
+    )
+  );
 }
 
 export async function addProject(data: {
@@ -47,11 +72,13 @@ export async function addProject(data: {
   image?: string;
   github?: string;
   live?: string;
+  featured?: boolean;
   stacks?: { name: string }[];
 }) {
   return prisma.project.create({
     data: {
       ...data,
+      featured: data.featured ?? false,
       stacks: data.stacks ? { create: data.stacks } : undefined,
     },
     include: { stacks: true },
@@ -66,6 +93,7 @@ export async function updateProject(
     image?: string;
     github?: string;
     live?: string;
+    featured?: boolean;
     stacks?: { name: string }[];
   }>
 ) {
@@ -110,7 +138,18 @@ export async function deleteProject(id: string) {
 
 // --- Portfolio Items ---
 export async function getPortfolioItems() {
-  return prisma.portfolioItem.findMany();
+  return prisma.portfolioItem.findMany({ orderBy: { displayOrder: "asc" } });
+}
+
+export async function reorderPortfolioItems(orderedIds: string[]) {
+  return prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.portfolioItem.update({
+        where: { id },
+        data: { displayOrder: index },
+      })
+    )
+  );
 }
 
 export async function addPortfolioItem(data: {

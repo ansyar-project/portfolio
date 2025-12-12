@@ -6,6 +6,14 @@ import {
   updatePortfolioItemAction,
   deletePortfolioItemAction,
 } from "@/lib/actions";
+import {
+  portfolioItemSchema,
+  validateForm,
+  type PortfolioItemFormData,
+  type ValidationErrors,
+} from "@/lib/schemas";
+import ValidationError from "@/components/admin/ValidationError";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUpload from "./ImageUpload";
 
 interface PortfolioFormProps {
@@ -13,7 +21,7 @@ interface PortfolioFormProps {
 }
 
 export default function PortfolioForm({ items }: PortfolioFormProps) {
-  const [form, setForm] = useState<Partial<PortfolioItem>>({
+  const [form, setForm] = useState<PortfolioItemFormData>({
     title: "",
     description: "",
     image: "",
@@ -23,6 +31,9 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    ValidationErrors<PortfolioItemFormData>
+  >({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   // Auto-clear messages after 3 seconds
@@ -39,7 +50,13 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+
+    // Clear field error when user starts typing
+    if (fieldErrors[name as keyof PortfolioItemFormData]) {
+      setFieldErrors({ ...fieldErrors, [name]: undefined });
+    }
   };
 
   const handleEdit = (item: PortfolioItem) => {
@@ -50,12 +67,15 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
       image: item.image ?? "",
       link: item.link ?? "",
     });
+    setFieldErrors({});
   };
+
   const handleCancel = () => {
     setEditingId(null);
     setForm({ title: "", description: "", image: "", link: "" });
     setError(null);
     setSuccess(null);
+    setFieldErrors({});
     setDeleteConfirm(null);
   };
 
@@ -65,20 +85,25 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
     setSuccess(null);
+
+    // Validate form
+    const validation = validateForm(portfolioItemSchema, form);
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      return;
+    }
+
+    setFieldErrors({});
+    setLoading(true);
+
     try {
       if (editingId) {
-        await updatePortfolioItemAction(editingId, form);
+        await updatePortfolioItemAction(editingId, validation.data);
         setSuccess("Portfolio item updated successfully!");
       } else {
-        await addPortfolioItemAction({
-          title: form.title ?? "",
-          description: form.description ?? "",
-          image: form.image,
-          link: form.link,
-        });
+        await addPortfolioItemAction(validation.data);
         setSuccess("Portfolio item added successfully!");
       }
       setForm({ title: "", description: "", image: "", link: "" });
@@ -116,40 +141,68 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2 mb-4">
-        <input
-          className="border rounded px-3 py-2"
-          name="title"
-          type="text"
-          placeholder="Title"
-          value={form.title}
-          onChange={handleChange}
-          required
-        />{" "}
-        <textarea
-          className="border rounded px-3 py-2"
-          name="description"
-          placeholder="Description"
-          value={form.description}
-          onChange={handleChange}
-          required
-        />{" "}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-4">
+        <div>
+          <input
+            className={`w-full border rounded px-3 py-2 ${
+              fieldErrors.title
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 dark:border-gray-600"
+            }`}
+            name="title"
+            type="text"
+            placeholder="Title *"
+            value={form.title}
+            onChange={handleChange}
+            aria-invalid={!!fieldErrors.title}
+          />
+          <ValidationError error={fieldErrors.title} />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Description *
+          </label>
+          <RichTextEditor
+            content={form.description}
+            onChange={(html) => {
+              setForm({ ...form, description: html });
+              if (fieldErrors.description) {
+                setFieldErrors({ ...fieldErrors, description: undefined });
+              }
+            }}
+            placeholder="Describe your portfolio item..."
+            className={fieldErrors.description ? "border-red-500" : ""}
+          />
+          <ValidationError error={fieldErrors.description} />
+        </div>
+
         <ImageUpload
           currentImage={form.image}
           onImageChangeAction={handleImageChange}
         />
-        <input
-          className="border rounded px-3 py-2"
-          name="link"
-          type="text"
-          placeholder="Project/Portfolio Link"
-          value={form.link}
-          onChange={handleChange}
-        />
+
+        <div>
+          <input
+            className={`w-full border rounded px-3 py-2 ${
+              fieldErrors.link
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 dark:border-gray-600"
+            }`}
+            name="link"
+            type="text"
+            placeholder="Project/Portfolio Link (https://...)"
+            value={form.link}
+            onChange={handleChange}
+            aria-invalid={!!fieldErrors.link}
+          />
+          <ValidationError error={fieldErrors.link} />
+        </div>
+
         <div className="flex gap-2">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-50"
+            className="bg-blue-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-50 hover:bg-blue-700 transition-colors"
             disabled={loading}
           >
             {editingId ? "Update" : "Add"}
@@ -157,38 +210,38 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
           {editingId && (
             <button
               type="button"
-              className="bg-gray-300 text-gray-800 px-4 py-2 rounded font-semibold"
+              className="bg-gray-300 text-gray-800 px-4 py-2 rounded font-semibold hover:bg-gray-400 transition-colors"
               onClick={handleCancel}
             >
               Cancel
             </button>
           )}
-        </div>{" "}
+        </div>
       </form>
 
       {/* Success Message */}
       {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded mb-4">
           {success}
         </div>
       )}
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
 
-      <ul className="divide-y border rounded">
+      <ul className="divide-y border rounded dark:border-gray-600">
         {items.map((item) => (
           <li
             key={item.id}
             className="flex flex-col sm:flex-row sm:items-center justify-between px-3 py-2 gap-2"
           >
             <span>
-              <span className="font-medium">{item.title}</span>
-              <span className="text-xs text-gray-500 ml-2">
+              <span className="font-medium dark:text-white">{item.title}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
                 {item.link && "(Link)"}
               </span>
             </span>
@@ -204,7 +257,7 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
               <button
                 className={`text-xs ${
                   deleteConfirm === item.id
-                    ? "text-red-800 bg-red-100 px-2 py-1 rounded font-semibold"
+                    ? "text-red-800 bg-red-100 dark:bg-red-900/30 dark:text-red-300 px-2 py-1 rounded font-semibold"
                     : "text-red-600 hover:underline"
                 }`}
                 onClick={() => handleDelete(item.id, item.title)}
@@ -224,7 +277,7 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
                   Cancel
                 </button>
               )}
-            </span>{" "}
+            </span>
           </li>
         ))}
       </ul>

@@ -21,23 +21,27 @@ model Profile {
 }
 
 model Skill {
-  id        String   @id @default(cuid())
-  name      String
-  level     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  name         String
+  level        String
+  category     String   @default("Other")
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Project {
-  id          String         @id @default(cuid())
-  title       String
-  description String
-  image       String?
-  github      String?
-  live        String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  stacks      ProjectStack[]
+  id           String         @id @default(cuid())
+  title        String
+  description  String
+  image        String?
+  github       String?
+  live         String?
+  featured     Boolean        @default(false)
+  displayOrder Int            @default(0)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  stacks       ProjectStack[]
 }
 
 model ProjectStack {
@@ -48,13 +52,14 @@ model ProjectStack {
 }
 
 model PortfolioItem {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  image       String?
-  link        String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  title        String
+  description  String
+  image        String?
+  link         String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model AuditLog {

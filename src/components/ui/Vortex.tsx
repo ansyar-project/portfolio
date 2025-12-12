@@ -18,7 +18,18 @@ export const Vortex = (props: {
 }) => {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const containerRef = React.useRef(null);
-  const particleCount = props.particleCount || 700;
+
+  // Mobile detection for performance optimization
+  const [isMobile, setIsMobile] = React.useState(false);
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Reduce particle count on mobile for better performance
+  const particleCount = isMobile ? 200 : props.particleCount || 700;
   const particlePropCount = 8;
   const particlePropsLength = particleCount * particlePropCount;
   const rangeY = props.rangeY || 800;

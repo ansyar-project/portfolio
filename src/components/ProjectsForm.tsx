@@ -7,6 +7,14 @@ import {
   deleteProjectAction,
   getAllUniqueStacksAction,
 } from "@/lib/actions";
+import {
+  projectSchema,
+  validateForm,
+  type ProjectFormData,
+  type ValidationErrors,
+} from "@/lib/schemas";
+import ValidationError from "@/components/admin/ValidationError";
+import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUpload from "./ImageUpload";
 
 interface ProjectFormProps {
@@ -20,6 +28,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
     image?: string;
     github?: string;
     live?: string;
+    featured?: boolean;
     stacks?: { name: string }[];
   }>({
     title: "",
@@ -27,12 +36,16 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
     image: "",
     github: "",
     live: "",
+    featured: false,
     stacks: [],
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<
+    ValidationErrors<ProjectFormData>
+  >({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [stackInput, setStackInput] = useState("");
   const [availableStacks, setAvailableStacks] = useState<string[]>([]);
@@ -103,8 +116,15 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: value });
+
+    // Clear field error when user starts typing
+    if (fieldErrors[name as keyof ProjectFormData]) {
+      setFieldErrors({ ...fieldErrors, [name]: undefined });
+    }
   };
+
   const handleEdit = (project: Project) => {
     setEditingId(project.id);
     setForm({
@@ -113,9 +133,12 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       image: project.image ?? "",
       github: project.github ?? "",
       live: project.live ?? "",
+      featured: project.featured ?? false,
       stacks: project.stacks?.map((stack) => ({ name: stack.name })) || [],
     });
+    setFieldErrors({});
   };
+
   const handleCancel = () => {
     setEditingId(null);
     setForm({
@@ -124,11 +147,13 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       image: "",
       github: "",
       live: "",
+      featured: false,
       stacks: [],
     });
     setStackInput("");
     setError(null);
     setSuccess(null);
+    setFieldErrors({});
     setDeleteConfirm(null);
   };
 
@@ -138,9 +163,30 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
     setSuccess(null);
+
+    // Prepare data for validation
+    const dataToValidate: ProjectFormData = {
+      title: form.title,
+      description: form.description,
+      image: form.image || "",
+      github: form.github || "",
+      live: form.live || "",
+      featured: form.featured ?? false,
+      stacks: form.stacks?.map((s) => s.name) || [],
+    };
+
+    // Validate form
+    const validation = validateForm(projectSchema, dataToValidate);
+    if (!validation.success) {
+      setFieldErrors(validation.errors);
+      return;
+    }
+
+    setFieldErrors({});
+    setLoading(true);
+
     try {
       if (editingId) {
         await updateProjectAction(editingId, form);
@@ -155,6 +201,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
         image: "",
         github: "",
         live: "",
+        featured: false,
         stacks: [],
       });
       setEditingId(null);
@@ -186,6 +233,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       setLoading(false);
     }
   };
+
   const addStack = () => {
     if (
       stackInput.trim() &&
@@ -223,6 +271,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       stacks: prev.stacks?.filter((_, index) => index !== indexToRemove) || [],
     }));
   };
+
   const handleStackInputKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -234,53 +283,90 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2 mb-4">
-        <input
-          className="border rounded px-3 py-2"
-          name="title"
-          type="text"
-          placeholder="Project title"
-          value={form.title}
-          onChange={handleChange}
-          required
-        />{" "}
-        <textarea
-          className="border rounded px-3 py-2"
-          name="description"
-          placeholder="Description"
-          value={form.description}
-          onChange={handleChange}
-          required
-        />{" "}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 mb-4">
+        <div>
+          <input
+            className={`w-full border rounded px-3 py-2 ${
+              fieldErrors.title
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 dark:border-gray-600"
+            }`}
+            name="title"
+            type="text"
+            placeholder="Project title *"
+            value={form.title}
+            onChange={handleChange}
+            aria-invalid={!!fieldErrors.title}
+          />
+          <ValidationError error={fieldErrors.title} />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Description *
+          </label>
+          <RichTextEditor
+            content={form.description}
+            onChange={(html) => {
+              setForm({ ...form, description: html });
+              if (fieldErrors.description) {
+                setFieldErrors({ ...fieldErrors, description: undefined });
+              }
+            }}
+            placeholder="Describe your project..."
+            className={fieldErrors.description ? "border-red-500" : ""}
+          />
+          <ValidationError error={fieldErrors.description} />
+        </div>
+
         <ImageUpload
           currentImage={form.image}
           onImageChangeAction={handleImageChange}
         />
-        <input
-          className="border rounded px-3 py-2"
-          name="github"
-          type="text"
-          placeholder="GitHub URL"
-          value={form.github}
-          onChange={handleChange}
-        />{" "}
-        <input
-          className="border rounded px-3 py-2"
-          name="live"
-          type="text"
-          placeholder="Live URL"
-          value={form.live}
-          onChange={handleChange}
-        />{" "}
+
+        <div>
+          <input
+            className={`w-full border rounded px-3 py-2 ${
+              fieldErrors.github
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 dark:border-gray-600"
+            }`}
+            name="github"
+            type="text"
+            placeholder="GitHub URL (https://github.com/...)"
+            value={form.github}
+            onChange={handleChange}
+            aria-invalid={!!fieldErrors.github}
+          />
+          <ValidationError error={fieldErrors.github} />
+        </div>
+
+        <div>
+          <input
+            className={`w-full border rounded px-3 py-2 ${
+              fieldErrors.live
+                ? "border-red-500 focus:ring-red-500"
+                : "border-gray-300 dark:border-gray-600"
+            }`}
+            name="live"
+            type="text"
+            placeholder="Live URL (https://...)"
+            value={form.live}
+            onChange={handleChange}
+            aria-invalid={!!fieldErrors.live}
+          />
+          <ValidationError error={fieldErrors.live} />
+        </div>
+
         {/* Technology Stack Section */}
-        <div className="border rounded px-3 py-2">
+        <div className="border rounded px-3 py-2 dark:border-gray-600">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Technology Stack
-          </label>{" "}
+          </label>
           <div className="relative flex gap-2 mb-2">
             <div className="flex-1 relative" ref={stackInputRef}>
               <input
-                className="w-full border rounded px-2 py-1 text-sm"
+                className="w-full border rounded px-2 py-1 text-sm border-gray-300 dark:border-gray-600"
                 type="text"
                 placeholder="Add technology (e.g., React, Node.js)"
                 value={stackInput}
@@ -311,7 +397,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
             <button
               type="button"
               onClick={addStack}
-              className="bg-emerald-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+              className="bg-emerald-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors"
               disabled={!stackInput.trim()}
             >
               Add
@@ -338,11 +424,33 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
               ))}
             </div>
           )}
+          <ValidationError error={fieldErrors.stacks} />
         </div>
+
+        {/* Featured Toggle */}
+        <div className="flex items-center gap-3 px-3 py-2 border rounded dark:border-gray-600">
+          <input
+            type="checkbox"
+            id="featured"
+            name="featured"
+            checked={form.featured || false}
+            onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+            className="w-5 h-5 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500"
+          />
+          <label htmlFor="featured" className="flex flex-col">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Featured Project
+            </span>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Display this project in the spotlight section on the homepage
+            </span>
+          </label>
+        </div>
+
         <div className="flex gap-2">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-50"
+            className="bg-blue-600 text-white px-4 py-2 rounded font-semibold disabled:opacity-50 hover:bg-blue-700 transition-colors"
             disabled={loading}
           >
             {editingId ? "Update" : "Add"}
@@ -350,28 +458,29 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
           {editingId && (
             <button
               type="button"
-              className="bg-gray-300 text-gray-800 px-4 py-2 rounded font-semibold"
+              className="bg-gray-300 text-gray-800 px-4 py-2 rounded font-semibold hover:bg-gray-400 transition-colors"
               onClick={handleCancel}
             >
               Cancel
             </button>
           )}
         </div>
-      </form>{" "}
+      </form>
+
       {/* Success Message */}
       {success && (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded mb-4">
           {success}
         </div>
       )}
       {/* Error Message */}
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
-      <ul className="divide-y border rounded">
-        {" "}
+
+      <ul className="divide-y border rounded dark:border-gray-600">
         {projects.map((project) => (
           <li key={project.id} className="flex flex-col gap-2 px-3 py-3">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
@@ -380,6 +489,11 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
                   <span className="font-medium text-gray-900 dark:text-white">
                     {project.title}
                   </span>
+                  {project.featured && (
+                    <span className="px-2 py-0.5 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-xs rounded-full font-medium">
+                      ⭐ Featured
+                    </span>
+                  )}
                   <span className="text-xs text-gray-500">
                     {project.github && "(GitHub)"}
                     {project.live && "(Live)"}
@@ -401,7 +515,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
                     ))}
                   </div>
                 )}
-              </div>{" "}
+              </div>
               <div className="flex gap-2 shrink-0">
                 <button
                   className="text-blue-600 hover:underline text-xs"
@@ -414,7 +528,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
                 <button
                   className={`text-xs ${
                     deleteConfirm === project.id
-                      ? "text-red-800 bg-red-100 px-2 py-1 rounded font-semibold"
+                      ? "text-red-800 bg-red-100 dark:bg-red-900/30 dark:text-red-300 px-2 py-1 rounded font-semibold"
                       : "text-red-600 hover:underline"
                   }`}
                   onClick={() => handleDelete(project.id, project.title)}

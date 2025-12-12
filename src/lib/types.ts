@@ -13,8 +13,9 @@ export interface Skill {
   id: string;
   name: string;
   level: string;
-  createdAt?: Date; // Optional if not always present
-  updatedAt?: Date; // Optional if not always present
+  category?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface Stack {
@@ -32,6 +33,7 @@ export type Project = {
   image: string;
   github: string;
   live: string;
+  featured?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
   stacks: Stack[];
