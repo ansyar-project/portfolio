@@ -22,6 +22,7 @@ import {
 import ValidationError from "@/components/admin/ValidationError";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUpload from "./ImageUpload";
+import { useToast } from "@/context/ToastContext";
 
 interface ProjectFormProps {
   projects: Project[];
@@ -53,11 +54,10 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<
     ValidationErrors<ProjectFormData>
   >({});
+  const { showToast } = useToast();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [stackInput, setStackInput] = useState("");
   const [availableStacks, setAvailableStacks] = useState<string[]>([]);
@@ -87,17 +87,6 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       }
     }
   );
-
-  // Auto-clear messages after 3 seconds
-  useEffect(() => {
-    if (success || error) {
-      const timer = setTimeout(() => {
-        setSuccess(null);
-        setError(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [success, error]);
 
   // Load available stacks on component mount
   useEffect(() => {
@@ -186,8 +175,6 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       stacks: [],
     });
     setStackInput("");
-    setError(null);
-    setSuccess(null);
     setFieldErrors({});
     setDeleteConfirm(null);
   };
@@ -198,8 +185,6 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     // Prepare data for validation
     const dataToValidate: ProjectFormData = {
@@ -216,6 +201,11 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
     const validation = validateForm(projectSchema, dataToValidate);
     if (!validation.success) {
       setFieldErrors(validation.errors);
+      // Show toast with first validation error
+      const firstError = Object.values(validation.errors).find(Boolean);
+      if (firstError) {
+        showToast("error", firstError);
+      }
       return;
     }
 
@@ -248,7 +238,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
         });
 
         await updateProjectAction(editingId, form);
-        setSuccess("Project updated successfully!");
+        showToast("success", "Project updated successfully!");
       } else {
         // Create a temporary project for optimistic UI
         const tempProject: Project = {
@@ -272,7 +262,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
         });
 
         await addProjectAction(form);
-        setSuccess("Project added successfully!");
+        showToast("success", "Project added successfully!");
       }
       setForm({
         title: "",
@@ -292,7 +282,10 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
           projects: previousProjects,
         });
       });
-      setError(err instanceof Error ? err.message : "Failed to save project.");
+      showToast(
+        "error",
+        err instanceof Error ? err.message : "Failed to save project."
+      );
     } finally {
       setLoading(false);
     }
@@ -305,8 +298,6 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
     }
 
     setLoading(true);
-    setError(null);
-    setSuccess(null);
 
     const previousProjects = optimisticProjects;
 
@@ -317,7 +308,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
 
     try {
       await deleteProjectAction(id);
-      setSuccess(`Project "${title}" deleted successfully!`);
+      showToast("success", `Project "${title}" deleted successfully!`);
       setDeleteConfirm(null);
     } catch (err) {
       // Revert on error
@@ -327,7 +318,8 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
           projects: previousProjects,
         });
       });
-      setError(
+      showToast(
+        "error",
         err instanceof Error ? err.message : "Failed to delete project."
       );
     } finally {
@@ -567,19 +559,6 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
           )}
         </div>
       </form>
-
-      {/* Success Message */}
-      {success && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded mb-4">
-          {success}
-        </div>
-      )}
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
 
       <ul className="divide-y border rounded dark:border-gray-600">
         {optimisticProjects.map((project) => (

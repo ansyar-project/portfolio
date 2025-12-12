@@ -1,10 +1,5 @@
 "use client";
-import React, {
-  useState,
-  useEffect,
-  useOptimistic,
-  startTransition,
-} from "react";
+import React, { useState, useOptimistic, startTransition } from "react";
 import type { PortfolioItem } from "@/lib/types";
 import {
   addPortfolioItemAction,
@@ -20,6 +15,7 @@ import {
 import ValidationError from "@/components/admin/ValidationError";
 import RichTextEditor from "@/components/admin/RichTextEditor";
 import ImageUpload from "./ImageUpload";
+import { useToast } from "@/context/ToastContext";
 
 interface PortfolioFormProps {
   items: PortfolioItem[];
@@ -40,12 +36,11 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<
     ValidationErrors<PortfolioItemFormData>
   >({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   // Optimistic state for portfolio items
   const [optimisticItems, updateOptimisticItems] = useOptimistic(
@@ -67,17 +62,6 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
       }
     }
   );
-
-  // Auto-clear messages after 3 seconds
-  useEffect(() => {
-    if (success || error) {
-      const timer = setTimeout(() => {
-        setSuccess(null);
-        setError(null);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [success, error]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -105,8 +89,6 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
   const handleCancel = () => {
     setEditingId(null);
     setForm({ title: "", description: "", image: "", link: "" });
-    setError(null);
-    setSuccess(null);
     setFieldErrors({});
     setDeleteConfirm(null);
   };
@@ -117,13 +99,16 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
 
     // Validate form
     const validation = validateForm(portfolioItemSchema, form);
     if (!validation.success) {
       setFieldErrors(validation.errors);
+      // Show toast with first validation error
+      const firstError = Object.values(validation.errors).find(Boolean);
+      if (firstError) {
+        showToast("error", firstError);
+      }
       return;
     }
 
@@ -144,7 +129,7 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
         });
 
         await updatePortfolioItemAction(editingId, validation.data);
-        setSuccess("Portfolio item updated successfully!");
+        showToast("success", "Portfolio item updated successfully!");
       } else {
         // Create a temporary item for optimistic UI
         const tempItem: PortfolioItem = {
@@ -160,7 +145,7 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
         });
 
         await addPortfolioItemAction(validation.data);
-        setSuccess("Portfolio item added successfully!");
+        showToast("success", "Portfolio item added successfully!");
       }
       setForm({ title: "", description: "", image: "", link: "" });
       setEditingId(null);
@@ -169,7 +154,8 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
       startTransition(() => {
         updateOptimisticItems({ type: "revert", items: previousItems });
       });
-      setError(
+      showToast(
+        "error",
         err instanceof Error ? err.message : "Failed to save portfolio item."
       );
     } finally {
@@ -184,8 +170,6 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
     }
 
     setLoading(true);
-    setError(null);
-    setSuccess(null);
 
     const previousItems = optimisticItems;
 
@@ -196,14 +180,15 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
 
     try {
       await deletePortfolioItemAction(id);
-      setSuccess(`Portfolio item "${title}" deleted successfully!`);
+      showToast("success", `Portfolio item "${title}" deleted successfully!`);
       setDeleteConfirm(null);
     } catch (err) {
       // Revert on error
       startTransition(() => {
         updateOptimisticItems({ type: "revert", items: previousItems });
       });
-      setError(
+      showToast(
+        "error",
         err instanceof Error ? err.message : "Failed to delete portfolio item."
       );
     } finally {
@@ -290,20 +275,6 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
           )}
         </div>
       </form>
-
-      {/* Success Message */}
-      {success && (
-        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 rounded mb-4">
-          {success}
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
 
       <ul className="divide-y border rounded dark:border-gray-600">
         {optimisticItems.map((item) => (
