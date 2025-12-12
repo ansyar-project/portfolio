@@ -11,7 +11,7 @@ RUN apk add --no-cache libc6-compat dumb-init
 RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 
 # Copy package files (remove pnpm-workspace.yaml if it doesn't exist)
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install dependencies with production optimizations
 RUN pnpm install --frozen-lockfile --prefer-offline
