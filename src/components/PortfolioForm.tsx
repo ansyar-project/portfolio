@@ -1,5 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useOptimistic,
+  startTransition,
+} from "react";
 import type { PortfolioItem } from "@/lib/types";
 import {
   addPortfolioItemAction,
@@ -20,6 +25,12 @@ interface PortfolioFormProps {
   items: PortfolioItem[];
 }
 
+type PortfolioAction =
+  | { type: "add"; item: PortfolioItem }
+  | { type: "update"; id: string; item: Partial<PortfolioItem> }
+  | { type: "delete"; id: string }
+  | { type: "revert"; items: PortfolioItem[] };
+
 export default function PortfolioForm({ items }: PortfolioFormProps) {
   const [form, setForm] = useState<PortfolioItemFormData>({
     title: "",
@@ -35,6 +46,27 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
     ValidationErrors<PortfolioItemFormData>
   >({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Optimistic state for portfolio items
+  const [optimisticItems, updateOptimisticItems] = useOptimistic(
+    items,
+    (state: PortfolioItem[], action: PortfolioAction) => {
+      switch (action.type) {
+        case "add":
+          return [...state, action.item];
+        case "update":
+          return state.map((item) =>
+            item.id === action.id ? { ...item, ...action.item } : item
+          );
+        case "delete":
+          return state.filter((item) => item.id !== action.id);
+        case "revert":
+          return action.items;
+        default:
+          return state;
+      }
+    }
+  );
 
   // Auto-clear messages after 3 seconds
   useEffect(() => {
@@ -98,17 +130,45 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
     setFieldErrors({});
     setLoading(true);
 
+    const previousItems = optimisticItems;
+
     try {
       if (editingId) {
+        // Optimistically update the item in the list
+        startTransition(() => {
+          updateOptimisticItems({
+            type: "update",
+            id: editingId,
+            item: validation.data,
+          });
+        });
+
         await updatePortfolioItemAction(editingId, validation.data);
         setSuccess("Portfolio item updated successfully!");
       } else {
+        // Create a temporary item for optimistic UI
+        const tempItem: PortfolioItem = {
+          id: `temp-${Date.now()}`,
+          title: validation.data.title,
+          description: validation.data.description,
+          image: validation.data.image || "",
+          link: validation.data.link || "",
+        };
+
+        startTransition(() => {
+          updateOptimisticItems({ type: "add", item: tempItem });
+        });
+
         await addPortfolioItemAction(validation.data);
         setSuccess("Portfolio item added successfully!");
       }
       setForm({ title: "", description: "", image: "", link: "" });
       setEditingId(null);
     } catch (err) {
+      // Revert on error
+      startTransition(() => {
+        updateOptimisticItems({ type: "revert", items: previousItems });
+      });
       setError(
         err instanceof Error ? err.message : "Failed to save portfolio item."
       );
@@ -126,11 +186,23 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
     setLoading(true);
     setError(null);
     setSuccess(null);
+
+    const previousItems = optimisticItems;
+
+    // Optimistically remove the item from the list
+    startTransition(() => {
+      updateOptimisticItems({ type: "delete", id });
+    });
+
     try {
       await deletePortfolioItemAction(id);
       setSuccess(`Portfolio item "${title}" deleted successfully!`);
       setDeleteConfirm(null);
     } catch (err) {
+      // Revert on error
+      startTransition(() => {
+        updateOptimisticItems({ type: "revert", items: previousItems });
+      });
       setError(
         err instanceof Error ? err.message : "Failed to delete portfolio item."
       );
@@ -234,7 +306,7 @@ export default function PortfolioForm({ items }: PortfolioFormProps) {
       )}
 
       <ul className="divide-y border rounded dark:border-gray-600">
-        {items.map((item) => (
+        {optimisticItems.map((item) => (
           <li
             key={item.id}
             className="flex flex-col sm:flex-row sm:items-center justify-between px-3 py-2 gap-2"

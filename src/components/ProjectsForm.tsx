@@ -1,5 +1,11 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useOptimistic,
+  startTransition,
+} from "react";
 import type { Project } from "@/lib/types";
 import {
   addProjectAction,
@@ -20,6 +26,12 @@ import ImageUpload from "./ImageUpload";
 interface ProjectFormProps {
   projects: Project[];
 }
+
+type ProjectAction =
+  | { type: "add"; project: Project }
+  | { type: "update"; id: string; project: Partial<Project> }
+  | { type: "delete"; id: string }
+  | { type: "revert"; projects: Project[] };
 
 export default function ProjectsForm({ projects }: ProjectFormProps) {
   const [form, setForm] = useState<{
@@ -52,6 +64,29 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
   const [showStackSuggestions, setShowStackSuggestions] = useState(false);
   const [filteredStacks, setFilteredStacks] = useState<string[]>([]);
   const stackInputRef = useRef<HTMLDivElement>(null);
+
+  // Optimistic state for projects
+  const [optimisticProjects, updateOptimisticProjects] = useOptimistic(
+    projects,
+    (state: Project[], action: ProjectAction) => {
+      switch (action.type) {
+        case "add":
+          return [...state, action.project];
+        case "update":
+          return state.map((project) =>
+            project.id === action.id
+              ? { ...project, ...action.project }
+              : project
+          );
+        case "delete":
+          return state.filter((project) => project.id !== action.id);
+        case "revert":
+          return action.projects;
+        default:
+          return state;
+      }
+    }
+  );
 
   // Auto-clear messages after 3 seconds
   useEffect(() => {
@@ -187,11 +222,55 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
     setFieldErrors({});
     setLoading(true);
 
+    const previousProjects = optimisticProjects;
+
     try {
       if (editingId) {
+        // Optimistically update the project in the list
+        startTransition(() => {
+          updateOptimisticProjects({
+            type: "update",
+            id: editingId,
+            project: {
+              title: form.title,
+              description: form.description,
+              image: form.image,
+              github: form.github,
+              live: form.live,
+              featured: form.featured,
+              stacks: form.stacks?.map((s, idx) => ({
+                id: `temp-${idx}`,
+                name: s.name,
+                projectId: editingId,
+              })),
+            },
+          });
+        });
+
         await updateProjectAction(editingId, form);
         setSuccess("Project updated successfully!");
       } else {
+        // Create a temporary project for optimistic UI
+        const tempProject: Project = {
+          id: `temp-${Date.now()}`,
+          title: form.title,
+          description: form.description,
+          image: form.image || "",
+          github: form.github || "",
+          live: form.live || "",
+          featured: form.featured || false,
+          stacks:
+            form.stacks?.map((s, idx) => ({
+              id: `temp-${idx}`,
+              name: s.name,
+              projectId: `temp-${Date.now()}`,
+            })) || [],
+        };
+
+        startTransition(() => {
+          updateOptimisticProjects({ type: "add", project: tempProject });
+        });
+
         await addProjectAction(form);
         setSuccess("Project added successfully!");
       }
@@ -206,6 +285,13 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       });
       setEditingId(null);
     } catch (err) {
+      // Revert on error
+      startTransition(() => {
+        updateOptimisticProjects({
+          type: "revert",
+          projects: previousProjects,
+        });
+      });
       setError(err instanceof Error ? err.message : "Failed to save project.");
     } finally {
       setLoading(false);
@@ -221,11 +307,26 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
     setLoading(true);
     setError(null);
     setSuccess(null);
+
+    const previousProjects = optimisticProjects;
+
+    // Optimistically remove the project from the list
+    startTransition(() => {
+      updateOptimisticProjects({ type: "delete", id });
+    });
+
     try {
       await deleteProjectAction(id);
       setSuccess(`Project "${title}" deleted successfully!`);
       setDeleteConfirm(null);
     } catch (err) {
+      // Revert on error
+      startTransition(() => {
+        updateOptimisticProjects({
+          type: "revert",
+          projects: previousProjects,
+        });
+      });
       setError(
         err instanceof Error ? err.message : "Failed to delete project."
       );
@@ -481,7 +582,7 @@ export default function ProjectsForm({ projects }: ProjectFormProps) {
       )}
 
       <ul className="divide-y border rounded dark:border-gray-600">
-        {projects.map((project) => (
+        {optimisticProjects.map((project) => (
           <li key={project.id} className="flex flex-col gap-2 px-3 py-3">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
               <div className="flex-1">
