@@ -6,7 +6,19 @@ import { z } from "zod";
 
 const optionalUrlSchema = z
   .string()
-  .url({ message: "Please enter a valid URL" })
+  .refine(
+    (val) => {
+      if (!val || val === "") return true; // Empty is allowed
+      if (val.startsWith("/")) return true; // Local paths are allowed
+      try {
+        new URL(val); // Full URLs must be valid
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: "Please enter a valid URL or path" }
+  )
   .optional()
   .or(z.literal(""));
 
