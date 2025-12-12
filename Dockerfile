@@ -8,7 +8,7 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat dumb-init
 
 # Enable pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 
 # Copy package files (remove pnpm-workspace.yaml if it doesn't exist)
 COPY package.json pnpm-lock.yaml ./
@@ -24,7 +24,7 @@ WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
 # Enable pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
 
 # Copy dependencies from deps stage
 COPY --from=deps /app/node_modules ./node_modules
